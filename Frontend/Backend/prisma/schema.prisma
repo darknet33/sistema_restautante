@@ -1,0 +1,145 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  CAJERO
+  MESERO
+  COCINA
+}
+
+enum TableStatus {
+  LIBRE
+  OCUPADA
+  RESERVADA
+  LIMPIEZA
+}
+
+enum OrderStatus {
+  PENDIENTE
+  EN_COCINA
+  LISTO
+  SERVIDO
+  PAGADO
+}
+
+enum MovementType {
+  VENTA
+  ENTRADA
+  MERMA
+  AJUSTE
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String
+  role      UserRole @default(MESERO)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders      Order[]
+  movements   InventoryMovement[]
+  turnoClosures TurnoClosure[]
+}
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  name      String
+  type      String   // 'plato' | 'bebida' | 'insumo'
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  products Product[]
+}
+
+model Product {
+  id                  Int       @id @default(autoincrement())
+  name                String
+  categoryId          Int
+  price               Decimal   @db.Decimal(10, 2)
+  cost                Decimal   @db.Decimal(10, 2)
+  unit                String    // 'unidad' | 'ml' | 'g' | 'porcion'
+  stockCurrent        Decimal   @db.Decimal(10, 2) @default(0)
+  stockMin            Decimal   @db.Decimal(10, 2) @default(0)
+  isInventoryTracked  Boolean   @default(false)
+  isAvailable         Boolean   @default(true)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  category            Category  @relation(fields: [categoryId], references: [id])
+  orderItems          OrderItem[]
+  movements           InventoryMovement[]
+}
+
+model Table {
+  id        Int         @id @default(autoincrement())
+  number    Int         @unique
+  seats     Int         @default(4)
+  status    TableStatus @default(LIBRE)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  orders Order[]
+}
+
+model Order {
+  id        Int         @id @default(autoincrement())
+  tableId   Int
+  userId    Int
+  status    OrderStatus @default(PENDIENTE)
+  total     Decimal     @db.Decimal(10, 2) @default(0)
+  notes     String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  table     Table    @relation(fields: [tableId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+  items     OrderItem[]
+}
+
+model OrderItem {
+  id        Int      @id @default(autoincrement())
+  orderId   Int
+  productId Int
+  quantity  Decimal  @db.Decimal(10, 2)
+  unitPrice Decimal  @db.Decimal(10, 2)
+  notes     String?
+  createdAt DateTime @default(now())
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+}
+
+model InventoryMovement {
+  id          Int           @id @default(autoincrement())
+  productId   Int
+  type        MovementType
+  quantity    Decimal       @db.Decimal(10, 2)
+  stockBefore Decimal       @db.Decimal(10, 2)
+  stockAfter  Decimal       @db.Decimal(10, 2)
+  userId      Int
+  createdAt   DateTime      @default(now())
+
+  product Product @relation(fields: [productId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+}
+
+model TurnoClosure {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  openedAt     DateTime @default(now())
+  closedAt     DateTime?
+  totalSales   Decimal  @db.Decimal(10, 2) @default(0)
+  totalOrders  Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
