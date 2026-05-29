@@ -1,122 +1,119 @@
 import { Request, Response } from 'express'
 import prisma from '../utils/prisma'
-import { OrderStatus, MovementType } from '@prisma/client'
+
+function getBoliviaDayRange() {
+  const now = new Date()
+  const boliviaOffset = -4 * 60
+  const localOffset = now.getTimezoneOffset()
+  const totalOffset = boliviaOffset - localOffset
+  const boliviaNow = new Date(now.getTime() + totalOffset * 60 * 1000)
+  const boliviaStart = new Date(boliviaNow)
+  boliviaStart.setHours(0, 0, 0, 0)
+  const boliviaEnd = new Date(boliviaStart)
+  boliviaEnd.setDate(boliviaEnd.getDate() + 1)
+  const utcStart = new Date(boliviaStart.getTime() - totalOffset * 60 * 1000)
+  const utcEnd = new Date(boliviaEnd.getTime() - totalOffset * 60 * 1000)
+  return { start: utcStart, end: utcEnd, boliviaDate: boliviaStart }
+}
 
 export async function getDailySales(req: Request, res: Response) {
   try {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const tomorrow = new Date(today)
-    tomorrow.setDate(tomorrow.getDate() + 1)
+    const { start, end, boliviaDate } = getBoliviaDayRange()
 
     const orders = await prisma.order.findMany({
       where: {
         status: 'PAGADO',
-        updatedAt: { gte: today, lt: tomorrow }
+        createdAt: { gte: start, lt: end }
       }
     })
 
-    const totalSales = orders.reduce((sum, order) => sum + Number(order.total), 0)
+    const totalSales = orders.reduce((sum, o) => sum + Number(o.total), 0)
     const totalOrders = orders.length
     const avgTicket = totalOrders > 0 ? totalSales / totalOrders : 0
 
     return res.json({
-      date: today.toISOString().split('T')[0],
+      date: boliviaDate.toISOString(),
       totalSales,
       totalOrders,
       avgTicket
     })
   } catch (error) {
     console.error('Daily sales error:', error)
-    return res.status(500).json({ message: 'Internal server error' })
+    return res.status(500).json({ message: 'Error interno del servidor' })
   }
 }
 
 export async function getTopDishes(req: Request, res: Response) {
   try {
     const { type } = req.query
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const tomorrow = new Date(today)
-    tomorrow.setDate(tomorrow.getDate() + 1)
+    const { start, end } = getBoliviaDayRange()
 
-    const where: any = {
-      order: {
+    const orders = await prisma.order.findMany({
+      where: {
         status: 'PAGADO',
-        updatedAt: { gte: today, lt: tomorrow }
-      }
-    }
-
-    if (type) {
-      where.product = {
-        category: {
-          type: type as string
+        createdAt: { gte: start, lt: end }
+      },
+      include: {
+        items: {
+          where: { type: 'dish' },
+          include: { dish: { include: { category: true } } }
         }
       }
-    }
-
-    const topDishes = await prisma.orderItem.groupBy({
-      by: ['productId'],
-      where,
-      _sum: { quantity: true },
-      orderBy: { _sum: { quantity: 'desc' } },
-      take: 10
     })
 
-    const result = await Promise.all(
-      topDishes.map(async (item) => {
-        const product = await prisma.product.findUnique({ 
-          where: { id: item.productId },
-          include: { category: true }
-        })
-        return {
-          product: product?.name,
-          category: product?.category?.name,
-          categoryType: product?.category?.type,
-          quantitySold: item._sum.quantity,
-          revenue: Number(product?.price || 0) * Number(item._sum.quantity || 0)
+    const dishCount: Record<string, { dish: any; totalQty: number }> = {}
+    for (const order of orders) {
+      for (const item of order.items) {
+        if (item.dish) {
+          if (type && item.dish.category?.type !== type) continue
+          const key = item.dish.name
+          if (dishCount[key]) {
+            dishCount[key].totalQty += Number(item.quantity)
+          } else {
+            dishCount[key] = { dish: item.dish, totalQty: Number(item.quantity) }
+          }
         }
-      })
-    )
+      }
+    }
 
-    return res.json(result)
+    const top = Object.values(dishCount)
+      .sort((a, b) => b.totalQty - a.totalQty)
+      .slice(0, 10)
+
+    return res.json(top)
   } catch (error) {
     console.error('Top dishes error:', error)
-    return res.status(500).json({ message: 'Internal server error' })
+    return res.status(500).json({ message: 'Error interno del servidor' })
   }
 }
 
 export async function closeTurno(req: Request, res: Response) {
   try {
-    const userId = req.user!.userId
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const tomorrow = new Date(today)
-    tomorrow.setDate(tomorrow.getDate() + 1)
+    const { start, end } = getBoliviaDayRange()
 
     const orders = await prisma.order.findMany({
       where: {
-        userId,
         status: 'PAGADO',
-        updatedAt: { gte: today, lt: tomorrow }
+        createdAt: { gte: start, lt: end }
       }
     })
 
-    const totalSales = orders.reduce((sum, order) => sum + Number(order.total), 0)
+    const totalSales = orders.reduce((sum, o) => sum + Number(o.total), 0)
     const totalOrders = orders.length
 
-    const turno = await prisma.turnoClosure.create({
+    const closure = await prisma.turnoClosure.create({
       data: {
-        userId,
+        userId: req.user!.userId,
+        openedAt: start,
         closedAt: new Date(),
         totalSales,
         totalOrders
       }
     })
 
-    return res.json(turno)
+    return res.status(201).json(closure)
   } catch (error) {
     console.error('Close turno error:', error)
-    return res.status(500).json({ message: 'Internal server error' })
+    return res.status(500).json({ message: 'Error interno del servidor' })
   }
 }

@@ -1,4 +1,4 @@
-import { Order } from '@prisma/client'
+
 
 interface PrinterConfig {
   ip: string
@@ -18,7 +18,7 @@ export function formatKitchenTicket(order: any): string {
     `Mesa: ${order.table?.number}`,
     `Hora: ${new Date().toLocaleTimeString()}`,
     '----------------',
-    ...(order.items?.map((item: any) => `${item.quantity}x ${item.product?.name}`) || []),
+    ...(order.items?.map((item: any) => `${item.quantity}x ${item.dish?.name || item.supply?.name || ''}`) || []),
     '----------------',
     order.notes ? `Notas: ${order.notes}` : '',
     '\n\n\n'
@@ -35,7 +35,7 @@ export function formatWaiterTicket(order: any): string {
     `Mesero: ${order.user?.name}`,
     '----------------',
     ...(order.items?.map((item: any) => 
-      `${item.quantity}x ${item.product?.name} - $${(Number(item.unitPrice) * Number(item.quantity)).toFixed(2)}`) || []),
+      `${item.quantity}x ${item.dish?.name || item.supply?.name || ''} - $${(Number(item.unitPrice) * Number(item.quantity)).toFixed(2)}`) || []),
     '----------------',
     `TOTAL: $${Number(order.total).toFixed(2)}`,
     '\n\n\n'
@@ -52,7 +52,7 @@ export function formatCustomerReceipt(order: any): string {
     `Fecha: ${new Date().toLocaleString()}`,
     '----------------',
     ...(order.items?.map((item: any) => 
-      `${item.quantity}x ${item.product?.name} - $${(Number(item.unitPrice) * Number(item.quantity)).toFixed(2)}`) || []),
+      `${item.quantity}x ${item.dish?.name || item.supply?.name || ''} - $${(Number(item.unitPrice) * Number(item.quantity)).toFixed(2)}`) || []),
     '----------------',
     `TOTAL: $${Number(order.total).toFixed(2)}`,
     '',

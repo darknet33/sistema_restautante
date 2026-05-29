@@ -6,27 +6,34 @@ const prisma = new PrismaClient()
 async function main() {
   console.log('Starting seed...')
 
-  // Users
+  // Users (login con username)
   const adminPassword = await bcrypt.hash('admin123', 10)
   const cajeroPassword = await bcrypt.hash('cajero123', 10)
   const meseroPassword = await bcrypt.hash('mesero123', 10)
+  const cocinaPassword = await bcrypt.hash('cocina123', 10)
 
   await prisma.user.upsert({
-    where: { email: 'admin@restaurante.com' },
+    where: { username: 'admin' },
     update: {},
-    create: { email: 'admin@restaurante.com', password: adminPassword, name: 'Administrador', role: 'ADMIN' }
+    create: { username: 'admin', email: 'admin@restaurante.com', password: adminPassword, name: 'Administrador', role: 'ADMIN' }
   })
 
   await prisma.user.upsert({
-    where: { email: 'cajero@restaurante.com' },
+    where: { username: 'cajero' },
     update: {},
-    create: { email: 'cajero@restaurante.com', password: cajeroPassword, name: 'Cajero Principal', role: 'CAJERO' }
+    create: { username: 'cajero', email: 'cajero@restaurante.com', password: cajeroPassword, name: 'Cajero Principal', role: 'CAJERO' }
   })
 
   await prisma.user.upsert({
-    where: { email: 'mesero@restaurante.com' },
+    where: { username: 'mesero' },
     update: {},
-    create: { email: 'mesero@restaurante.com', password: meseroPassword, name: 'Mesero 1', role: 'MESERO' }
+    create: { username: 'mesero', email: 'mesero@restaurante.com', password: meseroPassword, name: 'Mesero 1', role: 'MESERO' }
+  })
+
+  await prisma.user.upsert({
+    where: { username: 'cocina' },
+    update: {},
+    create: { username: 'cocina', email: 'cocina@restaurante.com', password: cocinaPassword, name: 'Cocinero 1', role: 'COCINA' }
   })
 
   // Categories
@@ -48,42 +55,59 @@ async function main() {
     create: { id: 3, name: 'Insumos', type: 'insumo' }
   })
 
-  // Products
-  await prisma.product.upsert({
+  // Dishes (Platos)
+  await prisma.dish.upsert({
     where: { id: 1 },
     update: {},
     create: {
-      id: 1, name: 'Hamburguesa Clásica', categoryId: catPlatos.id,
-      price: 120, cost: 60, unit: 'porcion', isAvailable: true, isInventoryTracked: false
+      id: 1, name: 'Hamburguesa Clásica', description: 'Carne 200g con queso, lechuga y tomate',
+      price: 120, cost: 60, categoryId: catPlatos.id, isAvailable: true, isMenu: true
     }
   })
 
-  await prisma.product.upsert({
+  await prisma.dish.upsert({
     where: { id: 2 },
     update: {},
     create: {
-      id: 2, name: 'Pizza Margherita', categoryId: catPlatos.id,
-      price: 150, cost: 70, unit: 'porcion', isAvailable: true, isInventoryTracked: false
+      id: 2, name: 'Pizza Margherita', description: 'Queso mozzarella, tomate y albahaca',
+      price: 150, cost: 70, categoryId: catPlatos.id, isAvailable: true, isMenu: true
     }
   })
 
-  await prisma.product.upsert({
+  await prisma.dish.upsert({
     where: { id: 3 },
     update: {},
     create: {
-      id: 3, name: 'Coca Cola 600ml', categoryId: catBebidas.id,
-      price: 25, cost: 15, unit: 'unidad', stockCurrent: 50, stockMin: 10,
-      isInventoryTracked: true, isAvailable: true
+      id: 3, name: 'Tacos al Pastor', description: 'Tacos de cerdo con piña y cebolla',
+      price: 90, cost: 40, categoryId: catPlatos.id, isAvailable: true, isMenu: true
     }
   })
 
-  await prisma.product.upsert({
-    where: { id: 4 },
+  // Supplies (Consumibles)
+  await prisma.supply.upsert({
+    where: { id: 1 },
     update: {},
     create: {
-      id: 4, name: 'Agua Mineral 500ml', categoryId: catBebidas.id,
-      price: 15, cost: 8, unit: 'unidad', stockCurrent: 100, stockMin: 20,
-      isInventoryTracked: true, isAvailable: true
+      id: 1, name: 'Coca Cola 600ml', unit: 'unidad', stockCurrent: 50, stockMin: 10,
+      categoryId: catBebidas.id, isInventoryTracked: true
+    }
+  })
+
+  await prisma.supply.upsert({
+    where: { id: 2 },
+    update: {},
+    create: {
+      id: 2, name: 'Agua Mineral 500ml', unit: 'unidad', stockCurrent: 100, stockMin: 20,
+      categoryId: catBebidas.id, isInventoryTracked: true
+    }
+  })
+
+  await prisma.supply.upsert({
+    where: { id: 3 },
+    update: {},
+    create: {
+      id: 3, name: 'Jugo de Naranja Natural', unit: 'unidad', stockCurrent: 30, stockMin: 10,
+      categoryId: catBebidas.id, isInventoryTracked: true
     }
   })
 

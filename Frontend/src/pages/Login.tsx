@@ -1,73 +1,85 @@
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
-import { login } from '../services/auth.service'
-import type { User, LoginResponse } from '../types'
+import { login as loginApi } from '../services/auth.service'
+import type { User } from '../types'
 
 interface LoginProps {
   onLogin: (token: string, user: User) => void
 }
 
 export default function Login({ onLogin }: LoginProps) {
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
 
   const mutation = useMutation({
-    mutationFn: () => login(email, password),
-    onSuccess: (data: LoginResponse) => {
-      onLogin(data.token, data.user)
-    },
-    onError: () => {
-      setError('Credenciales inválidas')
-    }
+    mutationFn: () => loginApi(username, password),
+    onSuccess: (data) => onLogin(data.token, data.user),
   })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    setError('')
-    mutation.mutate()
+    if (username && password) mutation.mutate()
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-md w-96">
-        <h1 className="text-2xl font-bold mb-6 text-center">Restaurante</h1>
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-2">Email</label>
+    <div className="min-h-screen bg-gradient-to-br from-blue-600 to-indigo-900 flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8">
+        <div className="text-center mb-8">
+          <div className="text-5xl mb-3">🍽️</div>
+          <h1 className="text-2xl font-bold text-gray-900">Sistema Restaurante</h1>
+          <p className="text-gray-500 mt-1">Inicia sesión para continuar</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Usuario</label>
             <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-2 border rounded-md"
-              placeholder="admin@restaurante.com"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              placeholder="Ingresa tu usuario"
+              autoComplete="username"
               required
             />
           </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-2">Contraseña</label>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-2 border rounded-md"
-              placeholder="••••••••"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              placeholder="Ingresa tu contraseña"
+              autoComplete="current-password"
               required
             />
           </div>
-          {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+
+          {mutation.isError && (
+            <p className="text-sm text-red-600 bg-red-50 rounded-lg p-3">
+              {(mutation.error as any)?.response?.data?.message || 'Error al iniciar sesión'}
+            </p>
+          )}
+
           <button
             type="submit"
             disabled={mutation.isPending}
-            className="w-full bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400"
+            className="w-full py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
           >
-            {mutation.isPending ? 'Ingresando...' : 'Ingresar'}
+            {mutation.isPending ? 'Iniciando sesión...' : 'Iniciar Sesión'}
           </button>
         </form>
-        <div className="mt-4 text-sm text-gray-600">
-          <p>Admin: admin@restaurante.com / admin123</p>
-          <p>Cajero: cajero@restaurante.com / cajero123</p>
-          <p>Mesero: mesero@restaurante.com / mesero123</p>
+
+        <div className="mt-6 pt-4 border-t border-gray-200">
+          <p className="text-xs text-gray-400 text-center mb-2">Usuarios de prueba:</p>
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="bg-gray-50 rounded p-2 text-center"><strong>admin</strong> / admin123</div>
+            <div className="bg-gray-50 rounded p-2 text-center"><strong>cajero</strong> / cajero123</div>
+            <div className="bg-gray-50 rounded p-2 text-center"><strong>mesero</strong> / mesero123</div>
+            <div className="bg-gray-50 rounded p-2 text-center"><strong>cocina</strong> / cocina123</div>
+          </div>
         </div>
       </div>
     </div>

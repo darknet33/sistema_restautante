@@ -5,7 +5,7 @@ import { authenticate, authorize } from '../middleware/auth'
 const router = Router()
 
 router.get('/daily-sales', authenticate, authorize('ADMIN', 'CAJERO'), getDailySales)
-router.get('/top-dishes', authenticate, authorize('ADMIN', 'CAJERO'), getTopDishes)
+router.get('/top-dishes', authenticate, authorize('ADMIN'), getTopDishes)
 router.post('/close-turno', authenticate, authorize('ADMIN', 'CAJERO'), closeTurno)
 
 export default router

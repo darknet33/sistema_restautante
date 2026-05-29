@@ -1,17 +1,16 @@
 import api from './api'
 import type { DailySales } from '../types'
 
-export async function getDailySales(): Promise<DailySales> {
-  const { data } = await api.get<DailySales>('/reports/daily-sales')
-  return data
+export function getDailySales(): Promise<DailySales> {
+  return api.get('/reports/daily-sales').then(r => r.data)
 }
 
-export async function getTopDishes(): Promise<any[]> {
-  const { data } = await api.get<any[]>('/reports/top-dishes')
-  return data
+export function getTopDishes(type?: string): Promise<Array<{ dish: any; totalQty: number }>> {
+  const params: any = {}
+  if (type) params.type = type
+  return api.get('/reports/top-dishes', { params }).then(r => r.data)
 }
 
-export async function closeTurno(): Promise<any> {
-  const { data } = await api.post<any>('/reports/close-turno')
-  return data
+export function closeTurno(): Promise<any> {
+  return api.post('/reports/close-turno').then(r => r.data)
 }

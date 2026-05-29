@@ -30,7 +30,6 @@ enum OrderStatus {
 }
 
 enum MovementType {
-  VENTA
   ENTRADA
   MERMA
   AJUSTE
@@ -38,16 +37,19 @@ enum MovementType {
 
 model User {
   id        Int      @id @default(autoincrement())
-  email     String   @unique
+  username  String   @unique
+  email     String?  @unique
   password  String
   name      String
   role      UserRole @default(MESERO)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  orders      Order[]
-  movements   InventoryMovement[]
-  turnoClosures TurnoClosure[]
+  orders         Order[]
+  supplies       CajaSession[]
+  movements      InventoryMovement[]
+  turnoClosures  TurnoClosure[]
+  wastes         Waste[]
 }
 
 model Category {
@@ -57,26 +59,42 @@ model Category {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  products Product[]
+  dishes   Dish[]
+  supplies Supply[]
 }
 
-model Product {
-  id                  Int       @id @default(autoincrement())
-  name                String
-  categoryId          Int
-  price               Decimal   @db.Decimal(10, 2)
-  cost                Decimal   @db.Decimal(10, 2)
-  unit                String    // 'unidad' | 'ml' | 'g' | 'porcion'
-  stockCurrent        Decimal   @db.Decimal(10, 2) @default(0)
-  stockMin            Decimal   @db.Decimal(10, 2) @default(0)
-  isInventoryTracked  Boolean   @default(false)
-  isAvailable         Boolean   @default(true)
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+model Dish {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  price       Decimal  @db.Decimal(10, 2)
+  cost        Decimal  @db.Decimal(10, 2)
+  categoryId  Int
+  imageUrl    String?
+  isAvailable Boolean  @default(true)
+  isMenu      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  category            Category  @relation(fields: [categoryId], references: [id])
-  orderItems          OrderItem[]
-  movements           InventoryMovement[]
+  category   Category    @relation(fields: [categoryId], references: [id])
+  orderItems OrderItem[]
+}
+
+model Supply {
+  id                 Int      @id @default(autoincrement())
+  name               String
+  unit               String   // 'unidad' | 'ml' | 'g' | 'porcion'
+  stockCurrent       Decimal  @db.Decimal(10, 2) @default(0)
+  stockMin           Decimal  @db.Decimal(10, 2) @default(0)
+  categoryId         Int
+  isInventoryTracked Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  category   Category           @relation(fields: [categoryId], references: [id])
+  orderItems OrderItem[]
+  movements  InventoryMovement[]
+  wastes     Waste[]
 }
 
 model Table {
@@ -84,6 +102,11 @@ model Table {
   number    Int         @unique
   seats     Int         @default(4)
   status    TableStatus @default(LIBRE)
+  posX      Float?
+  posY      Float?
+  shape     String?     @default("circle")
+  width     Float?      @default(80)
+  height    Float?      @default(80)
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
 
@@ -100,27 +123,30 @@ model Order {
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
 
-  table     Table    @relation(fields: [tableId], references: [id])
-  user      User     @relation(fields: [userId], references: [id])
-  items     OrderItem[]
+  table Table      @relation(fields: [tableId], references: [id])
+  user  User       @relation(fields: [userId], references: [id])
+  items OrderItem[]
 }
 
 model OrderItem {
   id        Int      @id @default(autoincrement())
   orderId   Int
-  productId Int
+  dishId    Int?
+  supplyId  Int?
+  type      String   // 'dish' | 'supply'
   quantity  Decimal  @db.Decimal(10, 2)
   unitPrice Decimal  @db.Decimal(10, 2)
   notes     String?
   createdAt DateTime @default(now())
 
-  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id])
+  order  Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  dish   Dish?   @relation(fields: [dishId], references: [id])
+  supply Supply? @relation(fields: [supplyId], references: [id])
 }
 
 model InventoryMovement {
   id          Int           @id @default(autoincrement())
-  productId   Int
+  supplyId    Int
   type        MovementType
   quantity    Decimal       @db.Decimal(10, 2)
   stockBefore Decimal       @db.Decimal(10, 2)
@@ -128,18 +154,42 @@ model InventoryMovement {
   userId      Int
   createdAt   DateTime      @default(now())
 
-  product Product @relation(fields: [productId], references: [id])
-  user    User    @relation(fields: [userId], references: [id])
+  supply Supply @relation(fields: [supplyId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+}
+
+model Waste {
+  id         Int      @id @default(autoincrement())
+  supplyId   Int
+  quantity   Decimal  @db.Decimal(10, 2)
+  reason     String
+  userId     Int
+  createdAt  DateTime @default(now())
+
+  supply Supply @relation(fields: [supplyId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+}
+
+model CajaSession {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  openingAmount Decimal  @db.Decimal(10, 2)
+  closingAmount Decimal? @db.Decimal(10, 2)
+  openedAt      DateTime @default(now())
+  closedAt      DateTime?
+  status        String   @default("ABIERTA")
+
+  user User @relation(fields: [userId], references: [id])
 }
 
 model TurnoClosure {
-  id           Int      @id @default(autoincrement())
-  userId       Int
-  openedAt     DateTime @default(now())
-  closedAt     DateTime?
-  totalSales   Decimal  @db.Decimal(10, 2) @default(0)
-  totalOrders  Int      @default(0)
-  createdAt    DateTime @default(now())
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  openedAt    DateTime @default(now())
+  closedAt    DateTime?
+  totalSales  Decimal  @db.Decimal(10, 2) @default(0)
+  totalOrders Int      @default(0)
+  createdAt   DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id])
 }

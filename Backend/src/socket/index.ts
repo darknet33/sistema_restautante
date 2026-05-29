@@ -34,17 +34,10 @@ export function setupSocket(server: HttpServer) {
   io.on('connection', (socket: Socket) => {
     console.log(`Client connected: ${socket.id}, role: ${socket.data.user.role}`)
 
-    socket.on('join_kitchen', () => {
-      socket.join('kitchen')
-    })
-
-    socket.on('join_waiter', () => {
-      socket.join('waiter')
-    })
-
-    socket.on('join_admin', () => {
-      socket.join('admin')
-    })
+    socket.on('join_kitchen', () => socket.join('kitchen'))
+    socket.on('join_waiter', () => socket.join('waiter'))
+    socket.on('join_admin', () => socket.join('admin'))
+    socket.on('join_cajero', () => socket.join('cajero'))
 
     socket.on('disconnect', () => {
       console.log(`Client disconnected: ${socket.id}`)

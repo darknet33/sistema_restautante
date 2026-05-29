@@ -1,5 +1,5 @@
 import { io, Socket } from 'socket.io-client'
-import type { Order, Product } from '../types'
+import type { Order, Supply } from '../types'
 
 type EventCallback<T = any> = (data: T) => void
 
@@ -25,7 +25,7 @@ class SocketService {
     }
   }
 
-  joinRoom(room: 'kitchen' | 'waiter' | 'admin') {
+  joinRoom(room: 'kitchen' | 'waiter' | 'admin' | 'cajero') {
     this.socket?.emit(`join_${room}`)
   }
 
@@ -39,7 +39,7 @@ class SocketService {
     return () => this.socket?.off('order_status_changed', callback)
   }
 
-  onStockLow(callback: EventCallback<Product>) {
+  onStockLow(callback: EventCallback<Supply>) {
     this.socket?.on('stock_low', callback)
     return () => this.socket?.off('stock_low', callback)
   }
@@ -47,6 +47,21 @@ class SocketService {
   onMenuUpdated(callback: EventCallback) {
     this.socket?.on('menu_updated', callback)
     return () => this.socket?.off('menu_updated', callback)
+  }
+
+  onCajaOpened(callback: EventCallback) {
+    this.socket?.on('caja_opened', callback)
+    return () => this.socket?.off('caja_opened', callback)
+  }
+
+  onCajaClosed(callback: EventCallback) {
+    this.socket?.on('caja_closed', callback)
+    return () => this.socket?.off('caja_closed', callback)
+  }
+
+  onTableLayoutUpdated(callback: EventCallback) {
+    this.socket?.on('table_layout_updated', callback)
+    return () => this.socket?.off('table_layout_updated', callback)
   }
 }
 

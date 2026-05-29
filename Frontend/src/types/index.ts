@@ -1,7 +1,7 @@
 export interface User {
   id: number
+  username: string
   name: string
-  email: string
   role: 'ADMIN' | 'CAJERO' | 'MESERO' | 'COCINA'
 }
 
@@ -11,18 +11,28 @@ export interface Category {
   type: string
 }
 
-export interface Product {
+export interface Dish {
   id: number
   name: string
-  categoryId: number
-  category?: Category
+  description?: string
   price: number
   cost: number
+  categoryId: number
+  category?: Category
+  imageUrl?: string
+  isAvailable: boolean
+  isMenu: boolean
+}
+
+export interface Supply {
+  id: number
+  name: string
   unit: string
   stockCurrent: number
   stockMin: number
+  categoryId: number
+  category?: Category
   isInventoryTracked: boolean
-  isAvailable: boolean
 }
 
 export interface Table {
@@ -30,17 +40,25 @@ export interface Table {
   number: number
   seats: number
   status: 'LIBRE' | 'OCUPADA' | 'RESERVADA' | 'LIMPIEZA'
+  posX?: number
+  posY?: number
+  shape?: string
+  width?: number
+  height?: number
   orders?: Order[]
 }
 
 export interface OrderItem {
   id: number
   orderId: number
-  productId: number
-  product?: Product
+  dishId?: number
+  supplyId?: number
+  type: 'dish' | 'supply'
   quantity: number
   unitPrice: number
   notes?: string
+  dish?: Dish
+  supply?: Supply
 }
 
 export interface Order {
@@ -48,7 +66,7 @@ export interface Order {
   tableId: number
   table?: Table
   userId: number
-  user?: User
+  user?: { id: number; name: string }
   status: 'PENDIENTE' | 'EN_COCINA' | 'LISTO' | 'SERVIDO' | 'PAGADO'
   total: number
   notes?: string
@@ -57,22 +75,31 @@ export interface Order {
   updatedAt: string
 }
 
+export interface Waste {
+  id: number
+  supplyId: number
+  supply?: Supply
+  quantity: number
+  reason: string
+  userId: number
+  user?: { id: number; name: string }
+  createdAt: string
+}
+
+export interface CajaSession {
+  id: number
+  userId: number
+  user?: { id: number; name: string; username: string }
+  openingAmount: number
+  closingAmount?: number
+  openedAt: string
+  closedAt?: string
+  status: 'ABIERTA' | 'CERRADA'
+}
+
 export interface LoginResponse {
   token: string
   user: User
-}
-
-export interface InventoryMovement {
-  id: number
-  productId: number
-  product?: Product
-  type: 'VENTA' | 'ENTRADA' | 'MERMA' | 'AJUSTE'
-  quantity: number
-  stockBefore: number
-  stockAfter: number
-  userId: number
-  user?: User
-  createdAt: string
 }
 
 export interface DailySales {

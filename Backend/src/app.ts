@@ -1,11 +1,16 @@
 import express from 'express'
 import cors from 'cors'
+import path from 'path'
 import dotenv from 'dotenv'
 import authRoutes from './routes/auth.routes'
-import productRoutes from './routes/product.routes'
+import dishRoutes from './routes/dish.routes'
+import supplyRoutes from './routes/supply.routes'
+import wasteRoutes from './routes/waste.routes'
+import cajaRoutes from './routes/caja.routes'
+import menuRoutes from './routes/menu.routes'
+import categoryRoutes from './routes/category.routes'
 import tableRoutes from './routes/table.routes'
 import orderRoutes from './routes/order.routes'
-import inventoryRoutes from './routes/inventory.routes'
 import reportRoutes from './routes/report.routes'
 
 dotenv.config()
@@ -14,12 +19,17 @@ const app = express()
 
 app.use(cors())
 app.use(express.json())
+app.use('/uploads', express.static(path.resolve(__dirname, '../uploads')))
 
 app.use('/api/auth', authRoutes)
-app.use('/api/products', productRoutes)
+app.use('/api/dishes', dishRoutes)
+app.use('/api/supplies', supplyRoutes)
+app.use('/api/waste', wasteRoutes)
+app.use('/api/caja', cajaRoutes)
+app.use('/api/menu', menuRoutes)
+app.use('/api/categories', categoryRoutes)
 app.use('/api/tables', tableRoutes)
 app.use('/api/orders', orderRoutes)
-app.use('/api/inventory', inventoryRoutes)
 app.use('/api/reports', reportRoutes)
 
 app.get('/api/health', (req, res) => {

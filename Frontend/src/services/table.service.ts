@@ -1,12 +1,14 @@
 import api from './api'
 import type { Table } from '../types'
 
-export async function getTables(): Promise<Table[]> {
-  const { data } = await api.get<Table[]>('/tables')
-  return data
+export function getTables(): Promise<Table[]> {
+  return api.get('/tables').then(r => r.data)
 }
 
-export async function updateTableStatus(id: number, status: string): Promise<Table> {
-  const { data } = await api.patch<Table>(`/tables/${id}/status`, { status })
-  return data
+export function updateTable(id: number, data: Partial<Table>): Promise<Table> {
+  return api.patch(`/tables/${id}`, data).then(r => r.data)
+}
+
+export function saveLayout(tables: Array<{ id: number; posX?: number; posY?: number; shape?: string; width?: number; height?: number }>): Promise<Table[]> {
+  return api.put('/tables/layout', { tables }).then(r => r.data)
 }
