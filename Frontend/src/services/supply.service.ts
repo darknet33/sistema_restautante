@@ -1,5 +1,5 @@
 import api from './api'
-import type { Supply } from '../types'
+import type { Supply, KardexResponse } from '../types'
 
 export function getSupplies(category?: number, tracked?: boolean): Promise<Supply[]> {
   const params: any = {}
@@ -30,4 +30,11 @@ export function deleteSupply(id: number): Promise<void> {
 
 export function addStock(id: number, quantity: number): Promise<Supply> {
   return api.post(`/supplies/${id}/stock`, { quantity }).then(r => r.data)
+}
+
+export function getSupplyKardex(id: number, startDate?: string, endDate?: string): Promise<KardexResponse> {
+  const params: any = {}
+  if (startDate) params.startDate = startDate
+  if (endDate) params.endDate = endDate
+  return api.get(`/supplies/${id}/kardex`, { params }).then(r => r.data)
 }

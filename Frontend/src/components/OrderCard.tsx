@@ -66,8 +66,20 @@ export default function OrderCard({ order, onStatusChange, allowedTransitions, s
             {item.dish?.imageUrl && (
               <img src={item.dish.imageUrl} alt="" className="w-7 h-7 rounded-lg object-cover flex-shrink-0" />
             )}
+            {item.type === 'supply' && !item.served && (
+              <span className="w-3.5 h-3.5 rounded-full border border-amber-400 flex items-center justify-center flex-shrink-0" title="No atendido">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+              </span>
+            )}
+            {item.type === 'supply' && item.served && (
+              <span className="w-3.5 h-3.5 rounded-full bg-altipiqui-green flex items-center justify-center flex-shrink-0" title="Atendido">
+                <svg className="w-2 h-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={4}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                </svg>
+              </span>
+            )}
             <span className="font-semibold text-gray-500 dark:text-dark-text-muted text-xs">x{item.quantity}</span>
-            <span className="text-gray-700 dark:text-dark-text truncate flex-1 text-xs">{item.dish?.name || item.supply?.name}</span>
+            <span className={`text-gray-700 dark:text-dark-text truncate flex-1 text-xs ${item.served && item.type === 'supply' ? 'line-through opacity-60' : ''}`}>{item.dish?.name || item.supply?.name}</span>
           </div>
         ))}
         {filteredItems.length > 4 && (

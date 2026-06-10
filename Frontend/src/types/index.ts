@@ -112,3 +112,26 @@ export interface DailySales {
   totalOrders: number
   avgTicket: number
 }
+
+export interface KardexMovement {
+  id: number
+  date: string
+  type: 'ENTRADA' | 'MERMA' | 'AJUSTE'
+  quantity: number
+  stockBefore: number
+  stockAfter: number
+  user: { id: number; name: string }
+}
+
+export interface KardexResponse {
+  supply: {
+    id: number
+    name: string
+    unit: string
+    stockCurrent: number
+  }
+  initialStock: number
+  startDate: string
+  endDate: string
+  movements: KardexMovement[]
+}

@@ -74,7 +74,15 @@ export async function update(req: Request, res: Response) {
     if (categoryId) data.categoryId = Number(categoryId)
     if (isAvailable !== undefined) data.isAvailable = isAvailable === 'true' || isAvailable === true
     if (isMenu !== undefined) data.isMenu = isMenu === 'true' || isMenu === true
-    if (req.file) data.imageUrl = `/uploads/${req.file.filename}`
+
+    if (req.file) {
+      const current = await prisma.dish.findUnique({ where: { id: Number(id) } })
+      if (current?.imageUrl) {
+        const oldPath = path.resolve(__dirname, '../../', current.imageUrl.replace(/^\//, ''))
+        if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath)
+      }
+      data.imageUrl = `/uploads/${req.file.filename}`
+    }
 
     const dish = await prisma.dish.update({
       where: { id: Number(id) },

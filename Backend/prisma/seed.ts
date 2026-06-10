@@ -83,33 +83,43 @@ async function main() {
     }
   })
 
-  // Supplies (Consumibles)
-  await prisma.supply.upsert({
-    where: { id: 1 },
-    update: {},
-    create: {
-      id: 1, name: 'Coca Cola 600ml', unit: 'unidad', stockCurrent: 50, stockMin: 10,
-      categoryId: catBebidas.id, isInventoryTracked: true
-    }
-  })
+  // Supplies (Consumibles) — con precios y movimiento inicial de stock
+  const suppliesData = [
+    { id: 1, name: 'Coca Cola 600ml', unit: 'unidad', purchaseCost: 5, salePrice: 12, stockCurrent: 50, stockMin: 10, categoryId: catBebidas.id, isInventoryTracked: true },
+    { id: 2, name: 'Agua Mineral 500ml', unit: 'unidad', purchaseCost: 3, salePrice: 8, stockCurrent: 100, stockMin: 20, categoryId: catBebidas.id, isInventoryTracked: true },
+    { id: 3, name: 'Jugo de Naranja Natural', unit: 'unidad', purchaseCost: 6, salePrice: 15, stockCurrent: 30, stockMin: 10, categoryId: catBebidas.id, isInventoryTracked: true },
+    { id: 4, name: 'Papas Fritas (porción)', unit: 'porcion', purchaseCost: 4, salePrice: 10, stockCurrent: 40, stockMin: 15, categoryId: catInsumos.id, isInventoryTracked: true },
+    { id: 5, name: 'Pan de Hamburguesa', unit: 'unidad', purchaseCost: 2, salePrice: 0, stockCurrent: 80, stockMin: 20, categoryId: catInsumos.id, isInventoryTracked: true },
+  ]
 
-  await prisma.supply.upsert({
-    where: { id: 2 },
-    update: {},
-    create: {
-      id: 2, name: 'Agua Mineral 500ml', unit: 'unidad', stockCurrent: 100, stockMin: 20,
-      categoryId: catBebidas.id, isInventoryTracked: true
-    }
-  })
+  for (const s of suppliesData) {
+    await prisma.supply.upsert({
+      where: { id: s.id },
+      update: {},
+      create: s
+    })
+  }
 
-  await prisma.supply.upsert({
-    where: { id: 3 },
-    update: {},
-    create: {
-      id: 3, name: 'Jugo de Naranja Natural', unit: 'unidad', stockCurrent: 30, stockMin: 10,
-      categoryId: catBebidas.id, isInventoryTracked: true
+  // Registra movimiento inicial de stock para cada consumible trackeado
+  for (const s of suppliesData) {
+    if (s.isInventoryTracked) {
+      const existing = await prisma.inventoryMovement.findFirst({
+        where: { supplyId: s.id, type: 'ENTRADA', stockBefore: 0, stockAfter: s.stockCurrent }
+      })
+      if (!existing) {
+        await prisma.inventoryMovement.create({
+          data: {
+            supplyId: s.id,
+            type: 'ENTRADA',
+            quantity: s.stockCurrent,
+            stockBefore: 0,
+            stockAfter: s.stockCurrent,
+            userId: 1
+          }
+        })
+      }
     }
-  })
+  }
 
   // Tables
   for (let i = 1; i <= 7; i++) {

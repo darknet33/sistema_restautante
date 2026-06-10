@@ -270,31 +270,57 @@ export default function AdminCaja() {
       </Modal>
 
       <Modal open={!!payModal} onClose={() => setPayModal(null)} title="Cobrar Pedido">
-        {payModal && (
-          <div className="space-y-4">
-            <div className="bg-altipiqui-green-light dark:bg-green-900/20 rounded-2xl p-5 text-center">
-              <p className="text-sm text-gray-500 dark:text-dark-text-muted">Mesa {payModal.table?.number}</p>
-              <p className="text-3xl font-bold text-altipiqui-green mt-1">{formatCurrency(payModal.total)}</p>
+        {payModal && (() => {
+          const chargeableItems = (payModal.items || []).filter(i => i.type !== 'supply' || i.served)
+          const chargeTotal = chargeableItems.reduce((sum, item) => sum + Number(item.quantity) * Number(item.unitPrice), 0)
+          const hasUnserved = (payModal.items || []).some(i => i.type === 'supply' && !i.served)
+          const originalTotal = payModal.total
+
+          return (
+            <div className="space-y-4">
+              <div className="bg-altipiqui-green-light dark:bg-green-900/20 rounded-2xl p-5 text-center">
+                <p className="text-sm text-gray-500 dark:text-dark-text-muted">Mesa {payModal.table?.number}</p>
+                {hasUnserved ? (
+                  <div className="mt-1">
+                    <p className="text-sm text-gray-400 dark:text-dark-text-muted line-through">{formatCurrency(originalTotal)}</p>
+                    <p className="text-3xl font-bold text-altipiqui-green">{formatCurrency(chargeTotal)}</p>
+                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">* Sin consumibles no atendidos</p>
+                  </div>
+                ) : (
+                  <p className="text-3xl font-bold text-altipiqui-green mt-1">{formatCurrency(originalTotal)}</p>
+                )}
+              </div>
+              <div className="space-y-2 max-h-40 overflow-y-auto">
+                {(payModal.items || []).map(item => {
+                  const isUnservedSupply = item.type === 'supply' && !item.served
+                  return (
+                    <div key={item.id} className={`flex justify-between text-sm py-1.5 border-b border-border/50 dark:border-dark-border/50 last:border-0 dark:text-dark-text ${isUnservedSupply ? 'opacity-50' : ''}`}>
+                      <span className="flex items-center gap-1.5">
+                        {item.type === 'supply' && (
+                          <span className={`w-3 h-3 rounded-full flex-shrink-0 ${item.served ? 'bg-altipiqui-green' : 'border border-amber-400'}`}>
+                            {item.served && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>}
+                          </span>
+                        )}
+                        <span className={isUnservedSupply ? 'line-through' : ''}>x{item.quantity} {item.dish?.name || item.supply?.name}</span>
+                        {isUnservedSupply && <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">(no atendido)</span>}
+                      </span>
+                      <span className={`font-medium ${isUnservedSupply ? 'line-through text-gray-400' : ''}`}>{formatCurrency(Number(item.quantity) * Number(item.unitPrice))}</span>
+                    </div>
+                  )
+                })}
+              </div>
+              <button onClick={() => payMutation.mutate(payModal.id)} disabled={payMutation.isPending}
+                className="w-full py-3 bg-altipiqui-green text-white rounded-xl font-bold hover:bg-green-700 disabled:opacity-50 transition-all duration-200 text-lg shadow-lg shadow-altipiqui-green/20 active:scale-[0.97]">
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  {payMutation.isPending ? 'Procesando...' : `Cobrar ${formatCurrency(chargeTotal)}`}
+                </span>
+              </button>
             </div>
-            <div className="space-y-2 max-h-40 overflow-y-auto">
-              {payModal.items?.map(item => (
-                <div key={item.id} className="flex justify-between text-sm py-1.5 border-b border-border/50 dark:border-dark-border/50 last:border-0 dark:text-dark-text">
-                  <span>x{item.quantity} {item.dish?.name || item.supply?.name}</span>
-                  <span className="font-medium">{formatCurrency(Number(item.quantity) * Number(item.unitPrice))}</span>
-                </div>
-              ))}
-            </div>
-            <button onClick={() => payMutation.mutate(payModal.id)} disabled={payMutation.isPending}
-              className="w-full py-3 bg-altipiqui-green text-white rounded-xl font-bold hover:bg-green-700 disabled:opacity-50 transition-all duration-200 text-lg shadow-lg shadow-altipiqui-green/20 active:scale-[0.97]">
-              <span className="flex items-center justify-center gap-2">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                {payMutation.isPending ? 'Procesando...' : 'Confirmar Pago'}
-              </span>
-            </button>
-          </div>
-        )}
+          )
+        })()}
       </Modal>
 
       <Modal open={closeModal} onClose={() => setCloseModal(false)} title="Cerrar Caja">

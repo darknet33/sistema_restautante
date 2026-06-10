@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import type { AxiosError } from 'axios'
-import { getSupplies, createSupply, updateSupply, deleteSupply, addStock } from '../../services/supply.service'
+import { getSupplies, createSupply, updateSupply, deleteSupply, addStock, getSupplyKardex } from '../../services/supply.service'
 import { getCategories } from '../../services/category.service'
 import CategoryManager from '../../components/CategoryManager'
 import Modal from '../../components/Modal'
-import { formatCurrency } from '../../utils/format'
-import type { Supply } from '../../types'
+import { formatCurrency, formatDateTime } from '../../utils/format'
+import type { Supply, KardexResponse } from '../../types'
 
 export default function AdminConsumibles() {
   const [showModal, setShowModal] = useState(false)
@@ -14,6 +14,14 @@ export default function AdminConsumibles() {
   const [stockQty, setStockQty] = useState('')
   const [editing, setEditing] = useState<Supply | null>(null)
   const [form, setForm] = useState({ name: '', unit: 'unidad', purchaseCost: '0', salePrice: '0', stockCurrent: '0', stockMin: '0', categoryId: '', isInventoryTracked: false })
+  const [kardexSupply, setKardexSupply] = useState<Supply | null>(null)
+  const [kardexData, setKardexData] = useState<KardexResponse | null>(null)
+  const [kardexLoading, setKardexLoading] = useState(false)
+  const [kardexStartDate, setKardexStartDate] = useState(() => {
+    const d = new Date(); d.setDate(1)
+    return d.toISOString().split('T')[0]
+  })
+  const [kardexEndDate, setKardexEndDate] = useState(() => new Date().toISOString().split('T')[0])
   const queryClient = useQueryClient()
 
   const { data: supplies = [] } = useQuery({ queryKey: ['supplies'], queryFn: () => getSupplies() })
@@ -42,6 +50,18 @@ export default function AdminConsumibles() {
     mutationFn: ({ id, qty }: { id: number; qty: number }) => addStock(id, qty),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['supplies'] }); setStockModal(null); setStockQty('') }
   })
+
+  const loadKardex = async (supply: Supply) => {
+    setKardexSupply(supply)
+    setKardexLoading(true)
+    try {
+      const data = await getSupplyKardex(supply.id, kardexStartDate, kardexEndDate)
+      setKardexData(data)
+    } catch (e) {
+      alert('Error al cargar kardex')
+    }
+    setKardexLoading(false)
+  }
 
   const openCreate = () => {
     setEditing(null)
@@ -112,6 +132,12 @@ export default function AdminConsumibles() {
                           <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9" />
                         </svg>
                         Stock
+                      </button>
+                      <button onClick={() => { setKardexSupply(s); loadKardex(s) }} className="px-2.5 py-1.5 bg-altipiqui-indigo-light dark:bg-altipiqui-indigo/20 text-altipiqui-indigo dark:text-altipiqui-indigo-light rounded-xl hover:bg-altipiqui-indigo/20 dark:hover:bg-altipiqui-indigo/30 transition-colors text-xs font-medium flex items-center gap-1">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5" />
+                        </svg>
+                        Kardex
                       </button>
                       <button onClick={() => openEdit(s)} className="p-1.5 bg-gray-100 dark:bg-dark-border rounded-xl hover:bg-gray-200 dark:hover:bg-dark-bg transition-colors">
                         <svg className="w-4 h-4 text-gray-600 dark:text-dark-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
@@ -219,6 +245,104 @@ export default function AdminConsumibles() {
                 Agregar
               </span>
             </button>
+          </div>
+        )}
+      </Modal>
+
+      <Modal open={!!kardexSupply} onClose={() => { setKardexSupply(null); setKardexData(null) }} title="Kardex de Inventario" size="lg">
+        {kardexSupply && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 bg-altipiqui-indigo-light dark:bg-altipiqui-indigo/10 rounded-xl p-4">
+              <div className="w-10 h-10 rounded-full bg-altipiqui-indigo/20 flex items-center justify-center">
+                <svg className="w-5 h-5 text-altipiqui-indigo" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-medium dark:text-dark-text">
+                  <strong>{kardexSupply.name}</strong> <span className="text-gray-400 dark:text-dark-text-muted">({kardexSupply.unit})</span>
+                </p>
+                <p className="text-xs text-gray-500 dark:text-dark-text-muted">Stock actual: {kardexSupply.stockCurrent} {kardexSupply.unit}</p>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3 items-end">
+              <div>
+                <label className="block text-xs font-medium mb-1 dark:text-dark-text">Desde</label>
+                <input type="date" value={kardexStartDate} onChange={e => setKardexStartDate(e.target.value)}
+                  className="border border-border dark:border-dark-border rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-altipiqui-indigo focus:border-altipiqui-indigo outline-none dark:bg-dark-surface dark:text-dark-text" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1 dark:text-dark-text">Hasta</label>
+                <input type="date" value={kardexEndDate} onChange={e => setKardexEndDate(e.target.value)}
+                  className="border border-border dark:border-dark-border rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-altipiqui-indigo focus:border-altipiqui-indigo outline-none dark:bg-dark-surface dark:text-dark-text" />
+              </div>
+              <button onClick={() => loadKardex(kardexSupply)}
+                className="px-4 py-2 bg-altipiqui-indigo text-white rounded-xl hover:bg-altipiqui-indigo-dark transition-all text-sm font-medium active:scale-[0.97] flex items-center gap-1.5">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182" />
+                </svg>
+                Consultar
+              </button>
+            </div>
+
+            {kardexLoading ? (
+              <div className="flex items-center justify-center py-8 text-gray-400 dark:text-dark-text-muted">
+                <svg className="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                Cargando...
+              </div>
+            ) : kardexData ? (
+              <div className="overflow-x-auto">
+                <div className="bg-altipiqui-cream dark:bg-dark-bg rounded-xl p-3 mb-3 flex items-center justify-between text-sm">
+                  <span className="text-gray-600 dark:text-dark-text-muted">Stock Inicial <span className="font-semibold text-gray-800 dark:text-dark-text">({formatDateTime(kardexData.startDate)})</span>:</span>
+                  <span className="font-bold text-lg text-altipiqui-indigo">{kardexData.initialStock} {kardexSupply.unit}</span>
+                </div>
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-border/50 dark:border-dark-border/50">
+                      <th className="text-left p-2 font-semibold text-gray-600 dark:text-dark-text">Fecha</th>
+                      <th className="text-left p-2 font-semibold text-gray-600 dark:text-dark-text">Tipo</th>
+                      <th className="text-right p-2 font-semibold text-gray-600 dark:text-dark-text">Cantidad</th>
+                      <th className="text-right p-2 font-semibold text-gray-600 dark:text-dark-text">Stock Antes</th>
+                      <th className="text-right p-2 font-semibold text-gray-600 dark:text-dark-text">Stock Después</th>
+                      <th className="text-left p-2 font-semibold text-gray-600 dark:text-dark-text">Usuario</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {kardexData.movements.map(m => (
+                      <tr key={m.id} className="border-b border-border/30 dark:border-dark-border/30 hover:bg-altipiqui-cream/50 dark:hover:bg-dark-bg/50">
+                        <td className="p-2 whitespace-nowrap dark:text-dark-text-muted">{formatDateTime(m.date)}</td>
+                        <td className="p-2">
+                          <span className={`px-2 py-0.5 rounded-full font-medium ${
+                            m.type === 'ENTRADA' ? 'bg-altipiqui-green-light text-altipiqui-green' :
+                            m.type === 'MERMA' ? 'bg-red-50 text-red-600' :
+                            'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+                          }`}>
+                            {m.type === 'ENTRADA' ? 'Entrada' : m.type === 'MERMA' ? 'Salida' : 'Ajuste'}
+                          </span>
+                        </td>
+                        <td className={`p-2 text-right font-medium ${m.type === 'ENTRADA' ? 'text-altipiqui-green' : 'text-red-500'}`}>
+                          {m.type === 'ENTRADA' ? '+' : '-'}{m.quantity}
+                        </td>
+                        <td className="p-2 text-right dark:text-dark-text">{m.stockBefore}</td>
+                        <td className="p-2 text-right font-semibold dark:text-dark-text">{m.stockAfter}</td>
+                        <td className="p-2 dark:text-dark-text-muted">{m.user.name}</td>
+                      </tr>
+                    ))}
+                    {kardexData.movements.length === 0 && (
+                      <tr><td colSpan={6} className="p-6 text-center text-gray-400 dark:text-dark-text-muted">Sin movimientos en el período</td></tr>
+                    )}
+                  </tbody>
+                </table>
+                <div className="bg-altipiqui-green-light dark:bg-green-900/20 rounded-xl p-3 mt-3 flex items-center justify-between text-sm">
+                  <span className="text-gray-600 dark:text-dark-text-muted">Stock Final:</span>
+                  <span className="font-bold text-lg text-altipiqui-green">{kardexData.supply.stockCurrent} {kardexSupply.unit}</span>
+                </div>
+              </div>
+            ) : null}
           </div>
         )}
       </Modal>

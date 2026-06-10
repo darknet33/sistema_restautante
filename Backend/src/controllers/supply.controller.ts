@@ -55,19 +55,34 @@ export async function create(req: Request, res: Response) {
   try {
     const { name, unit, purchaseCost, salePrice, stockCurrent, stockMin, categoryId, isInventoryTracked } = req.body
 
+    const initialStock = Number(stockCurrent) || 0
     const supply = await prisma.supply.create({
       data: {
         name,
         unit: unit || 'unidad',
         purchaseCost: Number(purchaseCost) || 0,
         salePrice: Number(salePrice) || 0,
-        stockCurrent: Number(stockCurrent) || 0,
+        stockCurrent: initialStock,
         stockMin: Number(stockMin) || 0,
         categoryId: Number(categoryId),
         isInventoryTracked: isInventoryTracked === 'true' || isInventoryTracked === true
       },
       include: { category: true }
     })
+
+    if (initialStock > 0) {
+      await prisma.inventoryMovement.create({
+        data: {
+          supplyId: supply.id,
+          type: 'ENTRADA',
+          quantity: initialStock,
+          stockBefore: 0,
+          stockAfter: initialStock,
+          userId: req.user!.userId
+        }
+      })
+    }
+
     return res.status(201).json(supply)
   } catch (error) {
     console.error('Create supply error:', error)
@@ -128,6 +143,58 @@ export async function remove(req: Request, res: Response) {
   } catch (error: any) {
     if (error.code === 'P2025') return res.status(404).json({ message: 'Consumible no encontrado' })
     console.error('Delete supply error:', error)
+    return res.status(500).json({ message: 'Error interno del servidor' })
+  }
+}
+
+export async function getKardex(req: Request, res: Response) {
+  try {
+    const { id } = req.params
+    const { startDate, endDate } = req.query
+
+    const supply = await prisma.supply.findUnique({ where: { id: Number(id) } })
+    if (!supply) return res.status(404).json({ message: 'Consumible no encontrado' })
+
+    const start = startDate ? new Date(String(startDate) + 'T00:00:00.000Z') : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+    const end = endDate
+      ? new Date(new Date(String(endDate) + 'T00:00:00.000Z').getTime() + 86400000)
+      : new Date(Date.now() + 86400000)
+
+    const lastBeforeStart = await prisma.inventoryMovement.findFirst({
+      where: { supplyId: Number(id), createdAt: { lt: start } },
+      orderBy: { createdAt: 'desc' }
+    })
+
+    const initialStock = lastBeforeStart ? Number(lastBeforeStart.stockAfter) : 0
+
+    const movements = await prisma.inventoryMovement.findMany({
+      where: { supplyId: Number(id), createdAt: { gte: start, lt: end } },
+      include: { user: { select: { id: true, name: true } } },
+      orderBy: { createdAt: 'asc' }
+    })
+
+    return res.json({
+      supply: {
+        id: supply.id,
+        name: supply.name,
+        unit: supply.unit,
+        stockCurrent: Number(supply.stockCurrent)
+      },
+      initialStock,
+      startDate: start.toISOString(),
+      endDate: end.toISOString(),
+      movements: movements.map(m => ({
+        id: m.id,
+        date: m.createdAt,
+        type: m.type,
+        quantity: Number(m.quantity),
+        stockBefore: Number(m.stockBefore),
+        stockAfter: Number(m.stockAfter),
+        user: m.user
+      }))
+    })
+  } catch (error) {
+    console.error('Get kardex error:', error)
     return res.status(500).json({ message: 'Error interno del servidor' })
   }
 }

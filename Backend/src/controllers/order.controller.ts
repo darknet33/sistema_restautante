@@ -137,7 +137,7 @@ export async function serveItem(req: Request, res: Response) {
     const { orderId, itemId } = req.params
     const item = await prisma.orderItem.findUnique({
       where: { id: Number(itemId) },
-      include: { order: true }
+      include: { order: true, supply: true }
     })
     if (!item || item.orderId !== Number(orderId)) {
       return res.status(404).json({ message: 'Item no encontrado' })
@@ -148,6 +148,36 @@ export async function serveItem(req: Request, res: Response) {
       data: { served: true },
       include: { dish: true, supply: true }
     })
+
+    if (item.type === 'supply' && item.supply?.isInventoryTracked) {
+      const supply = await prisma.supply.findUnique({ where: { id: item.supplyId! } })
+      if (supply) {
+        const stockBefore = Number(supply.stockCurrent)
+        const qty = Number(item.quantity)
+        const newStock = Math.max(0, stockBefore - qty)
+
+        await prisma.supply.update({
+          where: { id: item.supplyId! },
+          data: { stockCurrent: newStock }
+        })
+
+        await prisma.inventoryMovement.create({
+          data: {
+            supplyId: item.supplyId!,
+            type: 'MERMA',
+            quantity: qty,
+            stockBefore,
+            stockAfter: newStock,
+            userId: req.user!.userId
+          }
+        })
+
+        if (newStock <= Number(supply.stockMin)) {
+          const { emitStockLow } = await import('../socket/emitter')
+          emitStockLow({ ...supply, stockCurrent: newStock })
+        }
+      }
+    }
 
     return res.json(updated)
   } catch (error) {
@@ -175,42 +205,14 @@ export async function updateOrderStatus(req: Request, res: Response) {
     let updated
 
     if (status === 'EN_COCINA') {
-      updated = await prisma.$transaction(async (tx) => {
-        for (const item of order.items) {
-          if (item.type === 'supply' && item.supplyId) {
-            const supply = await tx.supply.findUnique({ where: { id: item.supplyId } })
-            if (supply?.isInventoryTracked) {
-              const stockBefore = Number(supply.stockCurrent)
-              const qty = Number(item.quantity)
-              const newStock = Math.max(0, stockBefore - qty)
-
-              await tx.supply.update({
-                where: { id: item.supplyId },
-                data: { stockCurrent: newStock }
-              })
-
-              await tx.inventoryMovement.create({
-                data: {
-                  supplyId: item.supplyId,
-                  type: 'ENTRADA',
-                  quantity: qty,
-                  stockBefore,
-                  stockAfter: newStock,
-                  userId: req.user!.userId
-                }
-              })
-            }
-          }
+      updated = await prisma.order.update({
+        where: { id: Number(id) },
+        data: { status },
+        include: {
+          items: { include: { dish: true, supply: true } },
+          table: true,
+          user: { select: { id: true, name: true } }
         }
-        return tx.order.update({
-          where: { id: Number(id) },
-          data: { status },
-          include: {
-            items: { include: { dish: true, supply: true } },
-            table: true,
-            user: { select: { id: true, name: true } }
-          }
-        })
       })
     } else {
       updated = await prisma.order.update({

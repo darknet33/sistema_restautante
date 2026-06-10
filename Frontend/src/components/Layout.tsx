@@ -108,7 +108,7 @@ export default function Layout({ user, onLogout }: LayoutProps) {
             </div>
             <div className="min-w-0">
               <h1 className="text-lg font-heading font-bold text-white leading-tight">ALTIPIQUI</h1>
-              <p className="text-xs text-sidebar-text truncate">Restaurante Andino</p>
+              <p className="text-xs text-sidebar-text truncate">Restaurante para todos</p>
             </div>
           </div>
         </div>
