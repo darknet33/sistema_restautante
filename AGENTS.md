@@ -45,6 +45,8 @@ isMenu      Boolean default false  (si aparece en menú público)
 ```
 name               String
 unit               String  ('unidad' | 'ml' | 'g' | 'porcion')
+purchaseCost       Decimal @default(0)
+salePrice          Decimal @default(0)
 stockCurrent       Decimal
 stockMin           Decimal
 categoryId         Int     → Category (type: 'bebida' | 'insumo')
@@ -82,6 +84,7 @@ type      String  ('dish' | 'supply')
 quantity  Decimal
 unitPrice Decimal
 notes     String?
+served    Boolean @default(false)  (indica si el consumible fue atendido)
 ```
 
 ### Waste (Perdido / Merma)
@@ -111,12 +114,13 @@ Relación: dishes Dish[], supplies Supply[]
 
 ### InventoryMovement
 ```
-productId Int      → Supply (referencia al supply)
-type      MovementType (ENTRADA | MERMA | AJUSTE)
-quantity  Decimal
+supplyId    Int      → Supply
+type        MovementType (ENTRADA | MERMA | AJUSTE)
+quantity    Decimal
 stockBefore Decimal
 stockAfter  Decimal
-userId    Int      → User
+userId      Int      → User
+createdAt   DateTime @default(now())
 ```
 
 ### TurnoClosure (histórico de cierres)
@@ -139,6 +143,14 @@ PENDIENTE ──→ EN_COCINA ──→ LISTO ──→ SERVIDO ──→ PAGADO
 - MESERO: LISTO → SERVIDO
 - CAJERO/ADMIN: SERVIDO → PAGADO (libera mesa)
 
+## Flujo de Consumibles (separado de platos)
+- Los consumibles **no pasan por cocina** — bypasscan el Kanban
+- El mesero atiende consumibles directamente marcando `served = true` por item
+- **Deducción de stock:** ocurre al marcar `served`, no al enviar a cocina
+- Stock se deduce con tipo `MERMA` en `InventoryMovement`, usando el usuario mesero como responsable
+- **Al cobrar:** se excluyen del total los consumibles con `served = false` (no atendidos)
+- Kanban de cocina (`filterType="dish"`): solo muestra órdenes con al menos un plato
+
 ## Eventos Socket.IO
 
 | Evento | Emisor | Destino | Descripción |
@@ -159,7 +171,7 @@ PENDIENTE ──→ EN_COCINA ──→ LISTO ──→ SERVIDO ──→ PAGADO
 | `Layout.tsx` | Sidebar responsiva + header + outlet |
 | `KanbanBoard.tsx` | Tablero Kanban drag & drop |
 | `KanbanColumn.tsx` | Columna individual del Kanban |
-| `OrderCard.tsx` | Card de pedido con imagen, nombre, cantidad, notas |
+| `OrderCard.tsx` | Card de pedido con imagen, nombre, cantidad, notas. Props: `filterType` ('dish'|'supply'), indicador visual de `served` |
 | `TableCanvas.tsx` | Canvas interactivo para visualizar/editar mesas |
 | `TableNode.tsx` | Mesa individual en el canvas |
 | `TablePalette.tsx` | Paleta para arrastrar mesas al canvas |
@@ -249,6 +261,7 @@ PATCH  /api/dishes/:id/image     → Dish (subir/actualizar imagen)
 ```
 GET    /api/supplies             → Supply[]
 GET    /api/supplies/low-stock   → Supply[] (stock bajo)
+GET    /api/supplies/:id/kardex  → KardexResponse (movimientos + stock inicial/final)
 POST   /api/supplies             → Supply
 PUT    /api/supplies/:id         → Supply
 DELETE /api/supplies/:id         → 204
@@ -275,6 +288,7 @@ POST   /api/orders               → { tableId, items: [{ dishId?, supplyId?, qu
 GET    /api/orders                → Order[] (filtro: status, tableId)
 GET    /api/orders/:id            → Order
 PATCH  /api/orders/:id/status     → { status }
+PATCH  /api/orders/:orderId/items/:itemId/serve → OrderItem (marcar consumible atendido)
 ```
 
 ### Menu (Público)
@@ -313,6 +327,22 @@ GET    /api/categories            → Category[]
 ## Reportes y Fechas
 - Los reportes de ventas diarias (`daily-sales`, `top-dishes`) usan la fecha **Bolivia (UTC-4)** para determinar el día actual
 - El backend calcula el inicio/fin del día Bolivia para filtrar órdenes PAGADO
+
+## Seed Data (`prisma/seed.ts`)
+```
+Usuarios: admin/admin123, cajero/cajero123, mesero/mesero123, cocina/cocina123
+Categorías: Platos Fuertes, Bebidas, Insumos
+Platos: Hamburguesa Clásica (Bs. 120), Pizza Margherita (Bs. 150), Tacos al Pastor (Bs. 90)
+Consumibles: Coca Cola 600ml, Agua Mineral 500ml, Jugo Naranja, Papas Fritas, Pan Hamburguesa
+            — todos con purchaseCost, salePrice y movimiento inicial en kardex
+Mesas: 7 mesas estado LIBRE
+```
+
+## Notas de configuración
+- `tsconfig.json` requiere `"types": ["node"]` para que el seed compile con `ts-node-dev`
+- Usar `npx prisma db push` para crear tablas (no `migrate dev` en entorno no-interactivo)
+- Orden de rutas Express: `/:id/kardex` debe definirse ANTES de `/:id`
+- Al matar procesos de Node: `Stop-Process -Name "node" -Force` antes de `prisma generate`
 
 ## Tareas pendientes del plan original
 - PWA (Manifest + Service Worker)
