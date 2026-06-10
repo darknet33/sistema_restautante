@@ -19,7 +19,10 @@ export default function CajeroDashboard() {
 
   useSocket('cajero')
   useOrderCreated(() => queryClient.invalidateQueries({ queryKey: ['orders'] }))
-  useOrderStatusChanged(() => queryClient.invalidateQueries({ queryKey: ['orders', 'tables'] }))
+  useOrderStatusChanged(() => {
+    queryClient.invalidateQueries({ queryKey: ['orders'] })
+    queryClient.invalidateQueries({ queryKey: ['tables'] })
+  })
 
   const { data: orders = [] } = useQuery({ queryKey: ['orders'], queryFn: () => getOrders(), refetchInterval: 5000 })
   const { data: tables = [] } = useQuery({ queryKey: ['tables'], queryFn: getTables, refetchInterval: 5000 })
@@ -27,7 +30,7 @@ export default function CajeroDashboard() {
 
   const payMutation = useMutation({
     mutationFn: (id: number) => updateOrderStatus(id, 'PAGADO'),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['orders', 'tables'] }); setPayModal(null) }
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['orders'] }); queryClient.invalidateQueries({ queryKey: ['tables'] }); setPayModal(null) }
   })
 
   const openMutation = useMutation({

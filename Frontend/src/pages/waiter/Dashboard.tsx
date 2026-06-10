@@ -21,7 +21,10 @@ export default function WaiterDashboard() {
 
   useSocket('waiter')
   useOrderCreated(() => queryClient.invalidateQueries({ queryKey: ['orders'] }))
-  useOrderStatusChanged(() => queryClient.invalidateQueries({ queryKey: ['orders', 'tables'] }))
+  useOrderStatusChanged(() => {
+    queryClient.invalidateQueries({ queryKey: ['orders'] })
+    queryClient.invalidateQueries({ queryKey: ['tables'] })
+  })
 
   const { data: orders = [] } = useQuery({ queryKey: ['orders'], queryFn: () => getOrders(), refetchInterval: 3000 })
   const { data: tables = [] } = useQuery({ queryKey: ['tables'], queryFn: getTables, refetchInterval: 5000 })

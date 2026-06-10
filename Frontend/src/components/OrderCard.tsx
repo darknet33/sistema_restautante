@@ -6,6 +6,7 @@ interface OrderCardProps {
   onStatusChange?: (orderId: number, newStatus: string) => void
   allowedTransitions?: string[]
   showDetails?: boolean
+  filterType?: 'dish' | 'supply'
 }
 
 const statusBorders: Record<string, string> = {
@@ -38,7 +39,10 @@ const transitionButtonColors: Record<string, string> = {
   PAGADO: 'bg-purple-500 hover:bg-purple-600',
 }
 
-export default function OrderCard({ order, onStatusChange, allowedTransitions, showDetails = true }: OrderCardProps) {
+export default function OrderCard({ order, onStatusChange, allowedTransitions, showDetails = true, filterType }: OrderCardProps) {
+  const filteredItems = filterType
+    ? (order.items || []).filter(i => i.type === filterType)
+    : (order.items || [])
   return (
     <div className={`bg-white dark:bg-dark-surface rounded-xl shadow-sm border border-border/50 dark:border-dark-border/50 border-l-4 ${statusBorders[order.status] || 'border-l-gray-300'} p-4 transition-all hover:shadow-md`}>
       <div className="flex items-start justify-between mb-3">
@@ -57,7 +61,7 @@ export default function OrderCard({ order, onStatusChange, allowedTransitions, s
       </div>
 
       <div className="space-y-1.5 mb-3">
-        {order.items?.slice(0, 4).map(item => (
+        {filteredItems.slice(0, 4).map(item => (
           <div key={item.id} className="flex items-center gap-2 text-sm">
             {item.dish?.imageUrl && (
               <img src={item.dish.imageUrl} alt="" className="w-7 h-7 rounded-lg object-cover flex-shrink-0" />
@@ -66,8 +70,8 @@ export default function OrderCard({ order, onStatusChange, allowedTransitions, s
             <span className="text-gray-700 dark:text-dark-text truncate flex-1 text-xs">{item.dish?.name || item.supply?.name}</span>
           </div>
         ))}
-        {(order.items?.length || 0) > 4 && (
-          <p className="text-[11px] text-gray-400 dark:text-dark-text-muted font-medium">+{order.items!.length - 4} más</p>
+        {filteredItems.length > 4 && (
+          <p className="text-[11px] text-gray-400 dark:text-dark-text-muted font-medium">+{filteredItems.length - 4} más</p>
         )}
       </div>
 
@@ -80,19 +84,19 @@ export default function OrderCard({ order, onStatusChange, allowedTransitions, s
         </div>
       )}
 
-      {showDetails && (
-        <div className="flex items-center justify-between pt-3 border-t border-border/50 dark:border-dark-border/50">
-          <div className="flex items-center gap-1.5">
-            <div className="w-5 h-5 rounded-full bg-altipiqui-indigo/10 dark:bg-altipiqui-indigo/20 flex items-center justify-center">
-              <span className="text-[8px] font-bold text-altipiqui-indigo dark:text-altipiqui-indigo-light">
-                {order.user?.name?.charAt(0) || '?'}
-              </span>
-            </div>
-            <span className="text-[11px] text-gray-400 dark:text-dark-text-muted">{order.user?.name}</span>
+      <div className="flex items-center justify-between pt-3 border-t border-border/50 dark:border-dark-border/50">
+        <div className="flex items-center gap-1.5">
+          <div className="w-5 h-5 rounded-full bg-altipiqui-indigo/10 dark:bg-altipiqui-indigo/20 flex items-center justify-center">
+            <span className="text-[8px] font-bold text-altipiqui-indigo dark:text-altipiqui-indigo-light">
+              {order.user?.name?.charAt(0) || '?'}
+            </span>
           </div>
-          <span className="text-sm font-bold text-altipiqui-red">{formatCurrency(order.total)}</span>
+          <span className="text-[11px] text-gray-400 dark:text-dark-text-muted">{order.user?.name}</span>
         </div>
-      )}
+        {!filterType && (
+          <span className="text-sm font-bold text-altipiqui-red">{formatCurrency(order.total)}</span>
+        )}
+      </div>
 
       {allowedTransitions?.map(status => (
         <button

@@ -19,7 +19,10 @@ export default function AdminCaja() {
   const queryClient = useQueryClient()
 
   useOrderCreated(() => queryClient.invalidateQueries({ queryKey: ['orders'] }))
-  useOrderStatusChanged(() => queryClient.invalidateQueries({ queryKey: ['orders', 'tables'] }))
+  useOrderStatusChanged(() => {
+    queryClient.invalidateQueries({ queryKey: ['orders'] })
+    queryClient.invalidateQueries({ queryKey: ['tables'] })
+  })
 
   const { data: currentSession, isLoading } = useQuery({
     queryKey: ['currentCaja'],
@@ -56,7 +59,7 @@ export default function AdminCaja() {
 
   const payMutation = useMutation({
     mutationFn: (id: number) => updateOrderStatus(id, 'PAGADO'),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['orders', 'tables'] }); setPayModal(null) }
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['orders'] }); queryClient.invalidateQueries({ queryKey: ['tables'] }); setPayModal(null) }
   })
 
   const pendingPayment = orders.filter(o => o.status === 'SERVIDO')

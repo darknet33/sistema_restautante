@@ -60,6 +60,7 @@ export interface OrderItem {
   unitPrice: number
   costPrice: number
   notes?: string
+  served: boolean
   dish?: Dish
   supply?: Supply
 }

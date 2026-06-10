@@ -132,6 +132,30 @@ export async function getOrder(req: Request, res: Response) {
   }
 }
 
+export async function serveItem(req: Request, res: Response) {
+  try {
+    const { orderId, itemId } = req.params
+    const item = await prisma.orderItem.findUnique({
+      where: { id: Number(itemId) },
+      include: { order: true }
+    })
+    if (!item || item.orderId !== Number(orderId)) {
+      return res.status(404).json({ message: 'Item no encontrado' })
+    }
+
+    const updated = await prisma.orderItem.update({
+      where: { id: Number(itemId) },
+      data: { served: true },
+      include: { dish: true, supply: true }
+    })
+
+    return res.json(updated)
+  } catch (error) {
+    console.error('Serve item error:', error)
+    return res.status(500).json({ message: 'Error interno del servidor' })
+  }
+}
+
 export async function updateOrderStatus(req: Request, res: Response) {
   try {
     const { id } = req.params

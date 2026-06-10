@@ -140,6 +140,7 @@ model OrderItem {
   unitPrice Decimal  @db.Decimal(10, 2)
   costPrice Decimal  @db.Decimal(10, 2) @default(0)
   notes     String?
+  served    Boolean  @default(false)
   createdAt DateTime @default(now())
 
   order  Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)

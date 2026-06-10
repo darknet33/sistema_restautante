@@ -8,6 +8,7 @@ import { formatCurrency } from '../../utils/format'
 import Modal from '../../components/Modal'
 import DishSelector from '../../components/DishSelector'
 import SupplySelector from '../../components/SupplySelector'
+import TableCanvas from '../../components/TableCanvas'
 
 interface OrderItem {
   dishId?: number
@@ -30,8 +31,6 @@ export default function NewOrder() {
   const { data: dishes = [] } = useQuery({ queryKey: ['dishes'], queryFn: () => getDishes(undefined, true) })
   const { data: supplies = [] } = useQuery({ queryKey: ['supplies'], queryFn: () => getSupplies() })
 
-  const freeTables = tables.filter(t => t.status === 'LIBRE')
-
   const createMutation = useMutation({
     mutationFn: () => createOrder({
       tableId: selectedTable!,
@@ -42,7 +41,8 @@ export default function NewOrder() {
       notes: notes || undefined
     }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['orders', 'tables'] })
+      queryClient.invalidateQueries({ queryKey: ['tables'] })
+      queryClient.invalidateQueries({ queryKey: ['orders'] })
       setShowSuccess(true)
       setSelectedTable(null)
       setSelectedDishes([])
@@ -122,27 +122,18 @@ export default function NewOrder() {
       {step === 'table' && (
         <div>
           <h3 className="font-heading font-semibold mb-4 dark:text-dark-text">Seleccionar Mesa</h3>
-          <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-7 gap-3">
-            {tables.map(table => (
-              <button
-                key={table.id}
-                onClick={() => { setSelectedTable(table.id); setStep('dishes') }}
-                disabled={table.status !== 'LIBRE'}
-                className={`p-4 rounded-2xl text-center transition-all duration-200 ${
-                  table.status === 'LIBRE'
-                    ? 'bg-altipiqui-green-light hover:bg-altipiqui-green text-altipiqui-green-dark hover:text-white shadow-sm hover:shadow-lg hover:scale-105'
-                    : 'bg-red-50 text-red-300 cursor-not-allowed dark:bg-red-900/20 dark:text-red-400'
-                }`}
-              >
-                <div className="text-2xl font-bold">{table.number}</div>
-                <div className="text-[10px] mt-1 font-medium">{table.status}</div>
-                <div className="text-[10px] opacity-70">{table.seats} as.</div>
-              </button>
-            ))}
-            {tables.length === 0 && (
-              <p className="col-span-full text-sm text-gray-400 dark:text-dark-text-muted text-center py-8">No hay mesas disponibles</p>
-            )}
-          </div>
+          <TableCanvas
+            tables={tables}
+            onTableClick={(table) => {
+              if (table.status === 'LIBRE') {
+                setSelectedTable(table.id)
+                setStep('dishes')
+              }
+            }}
+          />
+          {tables.length === 0 && (
+            <p className="text-sm text-gray-400 dark:text-dark-text-muted text-center py-8">No hay mesas disponibles</p>
+          )}
         </div>
       )}
 
@@ -150,7 +141,15 @@ export default function NewOrder() {
       {step === 'dishes' && (
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-heading font-semibold dark:text-dark-text">Seleccionar Platos</h3>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setStep('table')} className="flex items-center gap-1.5 px-3 py-1.5 border border-border dark:border-dark-border rounded-xl hover:bg-altipiqui-cream dark:hover:bg-dark-bg text-sm dark:text-dark-text transition-colors">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+                </svg>
+                Atrás
+              </button>
+              <h3 className="font-heading font-semibold dark:text-dark-text">Seleccionar Platos</h3>
+            </div>
             <button onClick={() => setStep('supplies')} className="flex items-center gap-1 text-sm text-altipiqui-red hover:text-altipiqui-red-dark font-medium">
               <span>Siguiente ({selectedDishes.length} seleccionados)</span>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -187,7 +186,15 @@ export default function NewOrder() {
       {step === 'supplies' && (
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-heading font-semibold dark:text-dark-text">Consumibles / Extras</h3>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setStep('dishes')} className="flex items-center gap-1.5 px-3 py-1.5 border border-border dark:border-dark-border rounded-xl hover:bg-altipiqui-cream dark:hover:bg-dark-bg text-sm dark:text-dark-text transition-colors">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+                </svg>
+                Atrás
+              </button>
+              <h3 className="font-heading font-semibold dark:text-dark-text">Consumibles / Extras</h3>
+            </div>
             <button onClick={() => setStep('review')} className="flex items-center gap-1 text-sm text-altipiqui-red hover:text-altipiqui-red-dark font-medium">
               <span>Revisar pedido</span>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>

@@ -6,6 +6,7 @@ interface KanbanBoardProps {
   orders: Order[]
   onStatusChange?: (orderId: number, newStatus: string) => void
   allowedTransitions?: Record<string, string[]>
+  filterType?: 'dish' | 'supply'
 }
 
 const statusGradients: Record<string, string> = {
@@ -15,7 +16,7 @@ const statusGradients: Record<string, string> = {
   SERVIDO: 'from-orange-500 to-orange-400',
 }
 
-export default function KanbanBoard({ columns, orders, onStatusChange, allowedTransitions }: KanbanBoardProps) {
+export default function KanbanBoard({ columns, orders, onStatusChange, allowedTransitions, filterType }: KanbanBoardProps) {
   const getOrdersByStatus = (status: string) =>
     orders.filter(o => o.status === status)
       .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
@@ -48,6 +49,7 @@ export default function KanbanBoard({ columns, orders, onStatusChange, allowedTr
                 order={order}
                 onStatusChange={onStatusChange}
                 allowedTransitions={allowedTransitions?.[col.status]}
+                filterType={filterType}
               />
             ))}
             {getOrdersByStatus(col.status).length === 0 && (

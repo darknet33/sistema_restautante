@@ -23,3 +23,7 @@ export function getOrder(id: number): Promise<Order> {
 export function updateOrderStatus(id: number, status: string): Promise<Order> {
   return api.patch(`/orders/${id}/status`, { status }).then(r => r.data)
 }
+
+export function serveOrderItem(orderId: number, itemId: number): Promise<any> {
+  return api.patch(`/orders/${orderId}/items/${itemId}/serve`).then(r => r.data)
+}

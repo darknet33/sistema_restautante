@@ -32,7 +32,10 @@ export default function KitchenDashboard() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['orders'] })
   })
 
-  const kitchenOrders = orders.filter(o => ['PENDIENTE', 'EN_COCINA', 'LISTO'].includes(o.status))
+  const kitchenOrders = orders.filter(o =>
+    ['PENDIENTE', 'EN_COCINA', 'LISTO'].includes(o.status) &&
+    o.items?.some(i => i.type === 'dish')
+  )
 
   return (
     <div className="space-y-6">
@@ -53,6 +56,7 @@ export default function KitchenDashboard() {
         orders={kitchenOrders}
         onStatusChange={(id, status) => statusMutation.mutate({ id, status })}
         allowedTransitions={kitchenTransitions}
+        filterType="dish"
       />
 
       <div className="flex items-start gap-3 bg-altipiqui-gold-light dark:bg-yellow-900/20 rounded-2xl p-4 border border-altipiqui-gold/20 dark:border-yellow-700/30">
