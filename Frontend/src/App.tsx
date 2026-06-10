@@ -21,6 +21,7 @@ import WaiterNewOrder from "./pages/waiter/NewOrder"
 import WaiterConsumibles from "./pages/waiter/Consumibles"
 
 import KitchenDashboard from "./pages/kitchen/Dashboard"
+import PublicMenu from "./pages/PublicMenu"
 
 const queryClient = new QueryClient()
 
@@ -33,6 +34,7 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login onLogin={login} />} />
+            <Route path="/menu" element={<PublicMenu />} />
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </BrowserRouter>
@@ -87,6 +89,7 @@ function App() {
               <Navigate to="/login" replace />
             } />
             <Route path="/login" element={<Navigate to="/" replace />} />
+            <Route path="/menu" element={<PublicMenu />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>

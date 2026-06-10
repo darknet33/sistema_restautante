@@ -93,7 +93,18 @@ export async function remove(req: Request, res: Response) {
   try {
     const { id } = req.params
     const dish = await prisma.dish.findUnique({ where: { id: Number(id) } })
-    if (dish?.imageUrl) {
+    if (!dish) return res.status(404).json({ message: 'Plato no encontrado' })
+
+    const orderCount = await prisma.orderItem.count({
+      where: { dishId: Number(id), type: 'dish' }
+    })
+    if (orderCount > 0) {
+      return res.status(409).json({
+        message: `No se puede eliminar: tiene ${orderCount} pedido(s) asociados`
+      })
+    }
+
+    if (dish.imageUrl) {
       const filePath = path.resolve(__dirname, '../../', dish.imageUrl.replace(/^\//, ''))
       if (fs.existsSync(filePath)) fs.unlinkSync(filePath)
     }

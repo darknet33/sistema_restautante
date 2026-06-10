@@ -26,14 +26,17 @@ export async function createOrder(req: Request, res: Response) {
 
       for (const item of items) {
         let unitPrice = 0
+        let costPrice = 0
         if (item.dishId) {
           const dish = await tx.dish.findUnique({ where: { id: Number(item.dishId) } })
           if (!dish) throw new Error(`Plato ${item.dishId} no encontrado`)
           unitPrice = Number(dish.price)
+          costPrice = Number(dish.cost)
         } else if (item.supplyId) {
           const supply = await tx.supply.findUnique({ where: { id: Number(item.supplyId) } })
           if (!supply) throw new Error(`Consumible ${item.supplyId} no encontrado`)
-          unitPrice = 0
+          unitPrice = Number(supply.salePrice)
+          costPrice = Number(supply.purchaseCost)
         }
 
         const qty = Number(item.quantity) || 1
@@ -45,6 +48,7 @@ export async function createOrder(req: Request, res: Response) {
           type: item.dishId ? 'dish' : 'supply',
           quantity: qty,
           unitPrice,
+          costPrice,
           notes: item.notes || null
         })
       }

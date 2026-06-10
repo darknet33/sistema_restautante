@@ -53,12 +53,14 @@ export async function getLowStock(req: Request, res: Response) {
 
 export async function create(req: Request, res: Response) {
   try {
-    const { name, unit, stockCurrent, stockMin, categoryId, isInventoryTracked } = req.body
+    const { name, unit, purchaseCost, salePrice, stockCurrent, stockMin, categoryId, isInventoryTracked } = req.body
 
     const supply = await prisma.supply.create({
       data: {
         name,
         unit: unit || 'unidad',
+        purchaseCost: Number(purchaseCost) || 0,
+        salePrice: Number(salePrice) || 0,
         stockCurrent: Number(stockCurrent) || 0,
         stockMin: Number(stockMin) || 0,
         categoryId: Number(categoryId),
@@ -76,10 +78,12 @@ export async function create(req: Request, res: Response) {
 export async function update(req: Request, res: Response) {
   try {
     const { id } = req.params
-    const { name, unit, stockCurrent, stockMin, categoryId, isInventoryTracked } = req.body
+    const { name, unit, purchaseCost, salePrice, stockCurrent, stockMin, categoryId, isInventoryTracked } = req.body
     const data: any = {}
     if (name) data.name = name
     if (unit) data.unit = unit
+    if (purchaseCost !== undefined) data.purchaseCost = Number(purchaseCost)
+    if (salePrice !== undefined) data.salePrice = Number(salePrice)
     if (stockCurrent !== undefined) data.stockCurrent = Number(stockCurrent)
     if (stockMin !== undefined) data.stockMin = Number(stockMin)
     if (categoryId) data.categoryId = Number(categoryId)
@@ -100,7 +104,26 @@ export async function update(req: Request, res: Response) {
 
 export async function remove(req: Request, res: Response) {
   try {
-    await prisma.supply.delete({ where: { id: Number(req.params.id) } })
+    const id = Number(req.params.id)
+    const supply = await prisma.supply.findUnique({ where: { id } })
+    if (!supply) return res.status(404).json({ message: 'Consumible no encontrado' })
+
+    const orderCount = await prisma.orderItem.count({
+      where: { supplyId: id, type: 'supply' }
+    })
+    const wasteCount = await prisma.waste.count({ where: { supplyId: id } })
+    const movementCount = await prisma.inventoryMovement.count({ where: { supplyId: id } })
+    if (orderCount > 0 || wasteCount > 0 || movementCount > 0) {
+      const parts: string[] = []
+      if (orderCount > 0) parts.push(`${orderCount} pedido(s)`)
+      if (wasteCount > 0) parts.push(`${wasteCount} merma(s)`)
+      if (movementCount > 0) parts.push(`${movementCount} movimiento(s) de inventario`)
+      return res.status(409).json({
+        message: `No se puede eliminar: tiene ${parts.join(', ')} asociados`
+      })
+    }
+
+    await prisma.supply.delete({ where: { id } })
     return res.status(204).send()
   } catch (error: any) {
     if (error.code === 'P2025') return res.status(404).json({ message: 'Consumible no encontrado' })

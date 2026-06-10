@@ -104,8 +104,28 @@ export async function updateUser(req: Request, res: Response) {
 
 export async function deleteUser(req: Request, res: Response) {
   try {
-    const { id } = req.params
-    await prisma.user.delete({ where: { id: Number(id) } })
+    const id = Number(req.params.id)
+    const user = await prisma.user.findUnique({ where: { id } })
+    if (!user) return res.status(404).json({ message: 'Usuario no encontrado' })
+
+    const orderCount = await prisma.order.count({ where: { userId: id } })
+    const cajaCount = await prisma.cajaSession.count({ where: { userId: id } })
+    const wasteCount = await prisma.waste.count({ where: { userId: id } })
+    const movementCount = await prisma.inventoryMovement.count({ where: { userId: id } })
+    const turnoCount = await prisma.turnoClosure.count({ where: { userId: id } })
+    if (orderCount > 0 || cajaCount > 0 || wasteCount > 0 || movementCount > 0 || turnoCount > 0) {
+      const parts: string[] = []
+      if (orderCount > 0) parts.push(`${orderCount} pedido(s)`)
+      if (cajaCount > 0) parts.push(`${cajaCount} sesión(es) de caja`)
+      if (wasteCount > 0) parts.push(`${wasteCount} merma(s)`)
+      if (movementCount > 0) parts.push(`${movementCount} movimiento(s) de inventario`)
+      if (turnoCount > 0) parts.push(`${turnoCount} cierre(s) de turno`)
+      return res.status(409).json({
+        message: `No se puede eliminar: tiene ${parts.join(', ')} asociados`
+      })
+    }
+
+    await prisma.user.delete({ where: { id } })
     return res.status(204).send()
   } catch (error: any) {
     if (error.code === 'P2025') return res.status(404).json({ message: 'Usuario no encontrado' })

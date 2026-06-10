@@ -84,6 +84,8 @@ model Supply {
   id                 Int      @id @default(autoincrement())
   name               String
   unit               String   // 'unidad' | 'ml' | 'g' | 'porcion'
+  purchaseCost       Decimal  @db.Decimal(10, 2) @default(0)
+  salePrice          Decimal  @db.Decimal(10, 2) @default(0)
   stockCurrent       Decimal  @db.Decimal(10, 2) @default(0)
   stockMin           Decimal  @db.Decimal(10, 2) @default(0)
   categoryId         Int
@@ -136,6 +138,7 @@ model OrderItem {
   type      String   // 'dish' | 'supply'
   quantity  Decimal  @db.Decimal(10, 2)
   unitPrice Decimal  @db.Decimal(10, 2)
+  costPrice Decimal  @db.Decimal(10, 2) @default(0)
   notes     String?
   createdAt DateTime @default(now())
 

@@ -17,9 +17,21 @@ dotenv.config()
 
 const app = express()
 
-app.use(cors())
+const allowedOrigins = process.env.FRONTEND_URL
+  ? process.env.FRONTEND_URL.split(',')
+  : ['http://localhost:5173', 'http://localhost:3000']
+
+app.use(cors({
+  origin: (origin, cb) => {
+    if (!origin || allowedOrigins.includes(origin)) return cb(null, true)
+    return cb(null, true)
+  }
+}))
 app.use(express.json())
 app.use('/uploads', express.static(path.resolve(__dirname, '../uploads')))
+
+const frontendDist = path.resolve(__dirname, '../../Frontend/dist')
+app.use(express.static(frontendDist))
 
 app.use('/api/auth', authRoutes)
 app.use('/api/dishes', dishRoutes)
@@ -34,6 +46,10 @@ app.use('/api/reports', reportRoutes)
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
+})
+
+app.get('/{*path}', (req, res) => {
+  res.sendFile(path.resolve(frontendDist, 'index.html'))
 })
 
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

@@ -18,13 +18,13 @@ export async function getMenu(req: Request, res: Response) {
 
 export async function generateQR(req: Request, res: Response) {
   try {
-    const baseUrl = `${req.protocol}://${req.get('host')}`
-    const menuUrl = `${baseUrl}/menu`
+    const frontendUrl = process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`
+    const menuUrl = `${frontendUrl}/menu`
 
     const qrDataUrl = await QRCode.toDataURL(menuUrl, {
       width: 400,
       margin: 2,
-      color: { dark: '#000000', light: '#ffffff' }
+      color: { dark: '#C0392B', light: '#ffffff' }
     })
 
     return res.json({ qrDataUrl, url: menuUrl })

@@ -9,10 +9,17 @@ interface TableCanvasProps {
 }
 
 const statusColors: Record<string, string> = {
-  LIBRE: 'bg-green-500',
-  OCUPADA: 'bg-red-500',
-  RESERVADA: 'bg-yellow-500',
-  LIMPIEZA: 'bg-gray-400',
+  LIBRE: 'bg-gradient-to-br from-green-400 to-green-600 shadow-green-500/30',
+  OCUPADA: 'bg-gradient-to-br from-altipiqui-red to-altipiqui-red-dark shadow-altipiqui-red/30',
+  RESERVADA: 'bg-gradient-to-br from-yellow-400 to-amber-500 shadow-yellow-500/30',
+  LIMPIEZA: 'bg-gradient-to-br from-gray-400 to-gray-500 shadow-gray-500/30',
+}
+
+const statusLabels: Record<string, string> = {
+  LIBRE: 'Libre',
+  OCUPADA: 'Ocupada',
+  RESERVADA: 'Reservada',
+  LIMPIEZA: 'Limpieza',
 }
 
 export default function TableCanvas({ tables, onTableClick, editable, onSaveLayout }: TableCanvasProps) {
@@ -30,6 +37,7 @@ export default function TableCanvas({ tables, onTableClick, editable, onSaveLayo
 
   const handleMouseDown = useCallback((e: React.MouseEvent, table: Table) => {
     if (!editable) return
+    e.preventDefault()
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
     offsetRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top }
     setDragId(table.id)
@@ -71,20 +79,30 @@ export default function TableCanvas({ tables, onTableClick, editable, onSaveLayo
   return (
     <div>
       {editable && (
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-sm text-gray-500">Arrastra las mesas para posicionarlas</p>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-dark-text-muted">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9" />
+            </svg>
+            <span>Arrastra las mesas para posicionarlas</span>
+          </div>
           <button
             onClick={handleSave}
-            className="px-4 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
+            className="px-4 py-2 bg-altipiqui-red text-white text-sm rounded-xl hover:bg-altipiqui-red-dark transition-all duration-200 shadow-lg shadow-altipiqui-red/20 active:scale-[0.97]"
           >
-            💾 Guardar Layout
+            <span className="flex items-center gap-1.5">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+              </svg>
+              Guardar Layout
+            </span>
           </button>
         </div>
       )}
 
       <div
         ref={canvasRef}
-        className="relative bg-white rounded-xl border-2 border-dashed border-gray-200"
+        className="relative bg-white dark:bg-dark-surface rounded-2xl border-2 border-dashed border-border dark:border-dark-border"
         style={{ minHeight: 400, height: '60vh' }}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -92,6 +110,7 @@ export default function TableCanvas({ tables, onTableClick, editable, onSaveLayo
       >
         {tables.map((table) => {
           const { posX, posY } = getPos(table)
+          const isDragging = dragId === table.id
           return (
             <div
               key={table.id}
@@ -99,30 +118,37 @@ export default function TableCanvas({ tables, onTableClick, editable, onSaveLayo
               onMouseDown={(e) => handleMouseDown(e, table)}
               className={`
                 absolute flex items-center justify-center cursor-pointer select-none
-                transition-shadow hover:shadow-lg
-                ${editable ? 'cursor-grab active:cursor-grabbing' : ''}
-                ${statusColors[table.status] || 'bg-gray-500'}
+                transition-all duration-150
+                ${editable ? 'cursor-grab active:cursor-grabbing' : 'hover:scale-105'}
+                ${statusColors[table.status] || 'bg-gradient-to-br from-gray-400 to-gray-500'}
+                ${isDragging ? 'scale-110 shadow-2xl z-10' : 'shadow-lg'}
               `}
               style={{
                 left: posX ?? 100 + (table.number * 20),
                 top: posY ?? 100 + (table.number * 20),
                 width: table.width || 80,
                 height: table.height || 80,
-                borderRadius: table.shape === 'circle' ? '50%' : table.shape === 'square' ? '8px' : '12px',
+                borderRadius: table.shape === 'circle' ? '50%' : table.shape === 'square' ? '12px' : '16px',
               }}
             >
               <div className="text-center text-white pointer-events-none">
-                <div className="text-lg font-bold">{table.number}</div>
-                <div className="text-xs">{table.seats} as.</div>
+                <div className="text-lg font-bold leading-tight">{table.number}</div>
+                <div className="text-[10px] opacity-80">{table.seats} as.</div>
+                {!editable && (
+                  <div className="text-[8px] mt-0.5 opacity-70 font-medium">{statusLabels[table.status]}</div>
+                )}
               </div>
             </div>
           )
         })}
 
         {tables.length === 0 && (
-          <p className="absolute inset-0 flex items-center justify-center text-gray-400">
-            No hay mesas configuradas
-          </p>
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400 dark:text-dark-text-muted">
+            <svg className="w-12 h-12 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-3-3v6m-7 4h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            <p className="text-sm">No hay mesas configuradas</p>
+          </div>
         )}
       </div>
     </div>

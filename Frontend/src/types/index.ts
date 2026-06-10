@@ -28,6 +28,8 @@ export interface Supply {
   id: number
   name: string
   unit: string
+  purchaseCost: number
+  salePrice: number
   stockCurrent: number
   stockMin: number
   categoryId: number
@@ -56,6 +58,7 @@ export interface OrderItem {
   type: 'dish' | 'supply'
   quantity: number
   unitPrice: number
+  costPrice: number
   notes?: string
   dish?: Dish
   supply?: Supply

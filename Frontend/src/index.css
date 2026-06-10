@@ -1,1 +1,45 @@
 @import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-heading: "Playfair Display", serif;
+  --font-body: "Inter", sans-serif;
+
+  --color-altipiqui-red: #C0392B;
+  --color-altipiqui-red-dark: #A93226;
+  --color-altipiqui-red-light: #FADBD8;
+  --color-altipiqui-indigo: #1A237E;
+  --color-altipiqui-indigo-dark: #0D1453;
+  --color-altipiqui-indigo-light: #E8EAF6;
+  --color-altipiqui-gold: #D4A017;
+  --color-altipiqui-gold-light: #FEF3D5;
+  --color-altipiqui-green: #2E7D32;
+  --color-altipiqui-green-light: #E8F5E9;
+  --color-altipiqui-cream: #FDF2E9;
+  --color-altipiqui-brown: #5D4037;
+
+  --color-sidebar-bg: #1a1a2e;
+  --color-sidebar-hover: #16213e;
+  --color-sidebar-active: #C0392B;
+  --color-sidebar-text: #c4c4d4;
+  --color-sidebar-text-active: #ffffff;
+
+  --color-surface: #ffffff;
+  --color-surface-muted: #F8F6F3;
+  --color-border: #E8E2D9;
+
+  --color-dark-bg: #0f0f1a;
+  --color-dark-surface: #1a1a2e;
+  --color-dark-border: #2a2a3e;
+  --color-dark-text: #e0e0e0;
+  --color-dark-text-muted: #8888a0;
+}
+
+body {
+  font-family: var(--font-body);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+}
