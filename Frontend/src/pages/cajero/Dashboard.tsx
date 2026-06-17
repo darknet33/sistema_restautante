@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Check, CheckCircle, CreditCard, Printer, PlusCircle, Tag } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getOrders, updateOrderStatus } from '../../services/order.service'
 import { getTables } from '../../services/table.service'
@@ -7,12 +8,18 @@ import { useOrderCreated, useOrderStatusChanged, useSocket } from '../../hooks/u
 import { formatCurrency } from '../../utils/format'
 import Modal from '../../components/Modal'
 import TableCanvas from '../../components/TableCanvas'
+import TicketPreviewModal from '../../components/TicketPreviewModal'
+import { getCustomerReceiptUrl } from '../../services/order.service'
 import type { Order } from '../../types'
 
 export default function CajeroDashboard() {
   const [openModal, setOpenModal] = useState(false)
   const [closeModal, setCloseModal] = useState(false)
   const [payModal, setPayModal] = useState<Order | null>(null)
+  const [paidOrder, setPaidOrder] = useState<Order | null>(null)
+  const [previewUrl, setPreviewUrl] = useState('')
+  const [previewTitle, setPreviewTitle] = useState('')
+  const [showPreview, setShowPreview] = useState(false)
   const [openingAmount, setOpeningAmount] = useState('')
   const [closingAmount, setClosingAmount] = useState('')
   const queryClient = useQueryClient()
@@ -30,7 +37,7 @@ export default function CajeroDashboard() {
 
   const payMutation = useMutation({
     mutationFn: (id: number) => updateOrderStatus(id, 'PAGADO'),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['orders'] }); queryClient.invalidateQueries({ queryKey: ['tables'] }); setPayModal(null) }
+    onSuccess: (order) => { queryClient.invalidateQueries({ queryKey: ['orders'] }); queryClient.invalidateQueries({ queryKey: ['tables'] }); setPayModal(null); setPaidOrder(order) }
   })
 
   const openMutation = useMutation({
@@ -43,8 +50,10 @@ export default function CajeroDashboard() {
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['currentCaja'] }); setCloseModal(false) }
   })
 
-  const pendingPayment = orders.filter(o => o.status === 'SERVIDO')
-  const inProgress = orders.filter(o => ['PENDIENTE', 'EN_COCINA', 'LISTO'].includes(o.status))
+  const pendingPayment = orders.filter(o =>
+    o.status === 'SERVIDO' || (o.status === 'LISTO' && o.orderType !== 'PARA_AQUI')
+  )
+  const inProgress = orders.filter(o => ['PENDIENTE', 'EN_COCINA'].includes(o.status) || (o.status === 'LISTO' && o.orderType === 'PARA_AQUI'))
 
   return (
     <div className="space-y-6">
@@ -66,9 +75,7 @@ export default function CajeroDashboard() {
           </div>
         ) : (
           <button onClick={() => setOpenModal(true)} className="flex items-center gap-1.5 px-4 py-2 bg-altipiqui-indigo text-white rounded-xl hover:bg-altipiqui-indigo-dark transition-all duration-200 text-sm font-medium active:scale-[0.97]">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+            <PlusCircle className="w-4 h-4" />
             Abrir Caja
           </button>
         )}
@@ -77,9 +84,7 @@ export default function CajeroDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div>
           <div className="flex items-center gap-2 mb-4">
-            <svg className="w-5 h-5 text-altipiqui-indigo" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" />
-            </svg>
+            <Tag className="w-5 h-5 text-altipiqui-indigo" />
             <h3 className="font-heading font-semibold dark:text-dark-text">Mesas</h3>
           </div>
           <TableCanvas tables={tables} />
@@ -96,19 +101,17 @@ export default function CajeroDashboard() {
                 <div key={order.id} className="bg-white dark:bg-dark-surface rounded-xl p-4 shadow-sm border border-orange-200 dark:border-orange-900/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
-                      <svg className="w-5 h-5 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
-                      </svg>
+                      <CreditCard className="w-5 h-5 text-orange-600 dark:text-orange-400" />
                     </div>
                     <div>
-                      <p className="font-bold dark:text-dark-text">Mesa {order.table?.number}</p>
+                      <p className="font-bold dark:text-dark-text">
+                        {order.table?.number ? `Mesa ${order.table.number}` : order.orderType === 'DELIVERY' ? 'Delivery' : 'Para Llevar'}
+                      </p>
                       <p className="text-xs text-gray-500 dark:text-dark-text-muted">{order.items?.length} productos · {formatCurrency(order.total)}</p>
                     </div>
                   </div>
                   <button onClick={() => setPayModal(order)} className="flex items-center gap-1.5 px-5 py-2 bg-altipiqui-green text-white rounded-xl hover:bg-green-700 transition-all duration-200 text-sm font-medium shadow-lg shadow-altipiqui-green/20 active:scale-[0.97] whitespace-nowrap">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+                    <CheckCircle className="w-4 h-4" />
                     Cobrar
                   </button>
                 </div>
@@ -126,7 +129,9 @@ export default function CajeroDashboard() {
               {inProgress.map(order => (
                 <div key={order.id} className="bg-white dark:bg-dark-surface rounded-xl p-3 shadow-sm border border-border/50 dark:border-dark-border/50 text-sm flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium dark:text-dark-text">Mesa {order.table?.number}</span>
+                    <span className="font-medium dark:text-dark-text">
+                      {order.table?.number ? `Mesa ${order.table.number}` : order.orderType === 'DELIVERY' ? 'Delivery' : 'Para Llevar'}
+                    </span>
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                       order.status === 'PENDIENTE' ? 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300' :
                       order.status === 'EN_COCINA' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' :
@@ -152,7 +157,9 @@ export default function CajeroDashboard() {
           return (
             <div className="space-y-4">
               <div className="bg-altipiqui-green-light dark:bg-green-900/20 rounded-2xl p-5 text-center">
-                <p className="text-sm text-gray-500 dark:text-dark-text-muted">Mesa {payModal.table?.number}</p>
+                <p className="text-sm text-gray-500 dark:text-dark-text-muted">
+                  {payModal.table?.number ? `Mesa ${payModal.table.number}` : payModal.orderType === 'DELIVERY' ? 'Delivery' : 'Para Llevar'}
+                </p>
                 {hasUnserved ? (
                   <div className="mt-1">
                     <p className="text-sm text-gray-400 dark:text-dark-text-muted line-through">{formatCurrency(originalTotal)}</p>
@@ -171,7 +178,7 @@ export default function CajeroDashboard() {
                       <span className="flex items-center gap-1.5">
                         {item.type === 'supply' && (
                           <span className={`w-3 h-3 rounded-full flex-shrink-0 ${item.served ? 'bg-altipiqui-green' : 'border border-amber-400'}`}>
-                            {item.served && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>}
+                            {item.served && <Check className="w-3 h-3 text-white" />}
                           </span>
                         )}
                         <span className={isUnservedSupply ? 'line-through' : ''}>x{item.quantity} {item.dish?.name || item.supply?.name}</span>
@@ -185,9 +192,7 @@ export default function CajeroDashboard() {
               <button onClick={() => payMutation.mutate(payModal.id)} disabled={payMutation.isPending}
                 className="w-full py-3 bg-altipiqui-green text-white rounded-xl font-bold hover:bg-green-700 disabled:opacity-50 transition-all duration-200 text-lg shadow-lg shadow-altipiqui-green/20 active:scale-[0.97]">
                 <span className="flex items-center justify-center gap-2">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+                  <CheckCircle className="w-5 h-5" />
                   {payMutation.isPending ? 'Procesando...' : `Cobrar ${formatCurrency(chargeTotal)}`}
                 </span>
               </button>
@@ -225,6 +230,37 @@ export default function CajeroDashboard() {
             className="w-full py-2.5 bg-altipiqui-red text-white rounded-xl hover:bg-altipiqui-red-dark disabled:opacity-50 transition-all font-medium active:scale-[0.97]">Cerrar</button>
         </div>
       </Modal>
+
+      <Modal open={!!paidOrder} onClose={() => setPaidOrder(null)} title="Pedido Cobrado" size="sm">
+        <div className="text-center py-6">
+          <div className="w-16 h-16 rounded-full bg-altipiqui-green-light dark:bg-green-900/30 flex items-center justify-center mx-auto mb-4">
+            <CheckCircle className="w-8 h-8 text-altipiqui-green" />
+          </div>
+          <p className="text-lg font-heading font-bold dark:text-dark-text">Pedido cobrado exitosamente</p>
+          {paidOrder && (
+            <>
+              <p className="text-sm text-gray-500 dark:text-dark-text-muted mt-1">Orden #{paidOrder.id}</p>
+              <button
+                onClick={async () => {
+                  const url = await getCustomerReceiptUrl(paidOrder.id)
+                  setPreviewUrl(url)
+                  setPreviewTitle('Recibo')
+                  setShowPreview(true)
+                }}
+                className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 border-2 border-altipiqui-indigo text-altipiqui-indigo rounded-xl hover:bg-altipiqui-indigo hover:text-white transition-all duration-200 font-medium text-sm active:scale-[0.97]"
+              >
+                <Printer className="w-4 h-4" />
+                Ver Recibo
+              </button>
+            </>
+          )}
+          <button onClick={() => setPaidOrder(null)} className="mt-3 px-6 py-2.5 bg-altipiqui-indigo text-white rounded-xl hover:bg-altipiqui-indigo-dark transition-all duration-200 shadow-lg shadow-altipiqui-indigo/20 font-medium active:scale-[0.97]">
+            Cerrar
+          </button>
+        </div>
+      </Modal>
+
+      <TicketPreviewModal open={showPreview} url={previewUrl} title={previewTitle} onClose={() => { setShowPreview(false); URL.revokeObjectURL(previewUrl) }} />
     </div>
   )
 }

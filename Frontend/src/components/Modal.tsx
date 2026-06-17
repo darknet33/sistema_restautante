@@ -1,3 +1,4 @@
+import { X } from 'lucide-react'
 import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 
@@ -36,9 +37,7 @@ export default function Modal({ open, onClose, title, children, size = 'md' }: M
           <div className="flex items-center justify-between p-5 border-b border-border/50 dark:border-dark-border/50">
             <h2 className="text-lg font-heading font-bold dark:text-dark-text">{title}</h2>
             <button onClick={onClose} className="p-1.5 hover:bg-gray-100 dark:hover:bg-dark-border rounded-xl transition-colors">
-              <svg className="w-5 h-5 text-gray-500 dark:text-dark-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <X className="w-5 h-5 text-gray-500 dark:text-dark-text-muted" />
             </button>
           </div>
         )}

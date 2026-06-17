@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { getMenu, generateQR } from '../../services/menu.service'
 import { formatCurrency } from '../../utils/format'
 import Modal from '../../components/Modal'
+import { Layout, Info, Image, Sparkles, Download } from 'lucide-react'
 
 export default function AdminMenu() {
   const [qrData, setQrData] = useState<{ qrDataUrl: string; url: string } | null>(null)
@@ -40,19 +41,14 @@ export default function AdminMenu() {
           disabled={qrMutation.isPending}
           className="flex items-center gap-1.5 px-4 py-2 bg-altipiqui-indigo text-white rounded-xl hover:bg-altipiqui-indigo-dark transition-all duration-200 text-sm font-medium active:scale-[0.97]"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 14.625c0-.621.504-1.125 1.125-1.125h.75" />
-          </svg>
+          <Layout className="w-4 h-4" />
           {qrMutation.isPending ? 'Generando...' : 'Generar QR'}
         </button>
       </div>
 
       <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-border/50 dark:border-dark-border/50 p-5">
         <div className="flex items-center gap-2 mb-4">
-          <svg className="w-5 h-5 text-altipiqui-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
-          </svg>
+          <Info className="w-5 h-5 text-altipiqui-gold" />
           <p className="text-sm text-gray-500 dark:text-dark-text-muted">
             Activa el interruptor para mostrar un plato en el menú público. Los clientes podrán ver los platos marcados.
           </p>
@@ -65,9 +61,7 @@ export default function AdminMenu() {
                   <img src={dish.imageUrl} alt="" className="w-12 h-12 rounded-xl object-cover flex-shrink-0" />
                 ) : (
                   <div className="w-12 h-12 rounded-xl bg-altipiqui-cream dark:bg-dark-bg flex items-center justify-center flex-shrink-0">
-                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.41a2.25 2.25 0 013.182 0l2.909 2.91m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-                    </svg>
+                    <Image className="w-5 h-5 text-gray-400" />
                   </div>
                 )}
                 <div className="min-w-0">
@@ -100,9 +94,7 @@ export default function AdminMenu() {
 
       <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-border/50 dark:border-dark-border/50 p-5">
         <div className="flex items-center gap-2 mb-4">
-          <svg className="w-5 h-5 text-altipiqui-green" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.25a1.444 1.444 0 000 1.5 2.045 2.045 0 003.533 1.03 2.045 2.045 0 003.533-1.03 2.045 2.045 0 003.533 1.03 2.045 2.045 0 003.533-1.03 1.444 1.444 0 000-1.5 2.045 2.045 0 00-3.533-1.03 2.045 2.045 0 00-3.533 1.03 2.045 2.045 0 00-3.533-1.03 2.045 2.045 0 00-3.533 1.03z" />
-          </svg>
+          <Sparkles className="w-5 h-5 text-altipiqui-green" />
           <h3 className="font-heading font-semibold dark:text-dark-text">Vista previa del menú ({menuDishes.length} platos)</h3>
         </div>
         {menuDishes.length === 0 ? (
@@ -115,9 +107,7 @@ export default function AdminMenu() {
                   <img src={dish.imageUrl} alt="" className="w-full h-24 object-cover" />
                 ) : (
                   <div className="w-full h-24 bg-altipiqui-cream dark:bg-dark-bg flex items-center justify-center">
-                    <svg className="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.41a2.25 2.25 0 013.182 0l2.909 2.91m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5z" />
-                    </svg>
+                    <Image className="w-6 h-6 text-gray-300" />
                   </div>
                 )}
                 <div className="p-2.5">
@@ -139,9 +129,7 @@ export default function AdminMenu() {
             <p className="text-xs text-gray-500 dark:text-dark-text-muted break-all bg-altipiqui-cream dark:bg-dark-bg rounded-xl p-3">{qrData.url}</p>
             <a href={qrData.qrDataUrl} download="menu-qr.png"
               className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-altipiqui-red text-white rounded-xl hover:bg-altipiqui-red-dark transition-all duration-200 shadow-lg shadow-altipiqui-red/20 text-sm font-medium">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-              </svg>
+              <Download className="w-4 h-4" />
               Descargar QR
             </a>
           </div>

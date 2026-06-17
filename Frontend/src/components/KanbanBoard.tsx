@@ -1,3 +1,4 @@
+import { PlusSquare } from 'lucide-react'
 import type { Order } from '../types'
 import OrderCard from './OrderCard'
 
@@ -6,6 +7,7 @@ interface KanbanBoardProps {
   orders: Order[]
   onStatusChange?: (orderId: number, newStatus: string) => void
   allowedTransitions?: Record<string, string[]>
+  getOrderTransitions?: (order: Order) => string[]
   filterType?: 'dish' | 'supply'
 }
 
@@ -16,7 +18,7 @@ const statusGradients: Record<string, string> = {
   SERVIDO: 'from-orange-500 to-orange-400',
 }
 
-export default function KanbanBoard({ columns, orders, onStatusChange, allowedTransitions, filterType }: KanbanBoardProps) {
+export default function KanbanBoard({ columns, orders, onStatusChange, allowedTransitions, getOrderTransitions, filterType }: KanbanBoardProps) {
   const getOrdersByStatus = (status: string) =>
     orders.filter(o => o.status === status)
       .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
@@ -48,15 +50,13 @@ export default function KanbanBoard({ columns, orders, onStatusChange, allowedTr
                 key={order.id}
                 order={order}
                 onStatusChange={onStatusChange}
-                allowedTransitions={allowedTransitions?.[col.status]}
+                allowedTransitions={getOrderTransitions ? getOrderTransitions(order) : allowedTransitions?.[col.status]}
                 filterType={filterType}
               />
             ))}
             {getOrdersByStatus(col.status).length === 0 && (
               <div className="flex flex-col items-center justify-center py-10 text-gray-400 dark:text-dark-text-muted">
-                <svg className="w-10 h-10 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-3-3v6m-7 4h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
+                <PlusSquare className="w-10 h-10 mb-2 opacity-50" />
                 <p className="text-sm">Sin pedidos</p>
               </div>
             )}

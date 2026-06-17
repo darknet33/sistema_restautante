@@ -58,6 +58,7 @@ function App() {
                 <Route path="/admin/menu" element={<AdminMenu />} />
                 <Route path="/admin/usuarios" element={<AdminUsuarios />} />
                 <Route path="/admin/reportes" element={<AdminReportes />} />
+                <Route path="/admin/nuevo-pedido" element={<WaiterNewOrder />} />
               </>
             )}
 

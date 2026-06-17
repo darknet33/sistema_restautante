@@ -7,6 +7,7 @@ import CategoryManager from '../../components/CategoryManager'
 import Modal from '../../components/Modal'
 import { formatCurrency, formatDateTime } from '../../utils/format'
 import type { Supply, KardexResponse } from '../../types'
+import { PlusCircle, Plus, Package, Pencil, Trash2, Settings, RefreshCw, Loader2 } from 'lucide-react'
 
 export default function AdminConsumibles() {
   const [showModal, setShowModal] = useState(false)
@@ -91,9 +92,7 @@ export default function AdminConsumibles() {
           <p className="text-sm text-gray-500 dark:text-dark-text-muted">Control de stock y consumibles</p>
         </div>
         <button onClick={openCreate} className="flex items-center gap-1.5 px-4 py-2 bg-altipiqui-red text-white rounded-xl hover:bg-altipiqui-red-dark transition-all duration-200 shadow-lg shadow-altipiqui-red/20 text-sm font-medium active:scale-[0.97]">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
+          <PlusCircle className="w-4 h-4" />
           Nuevo
         </button>
       </div>
@@ -128,26 +127,18 @@ export default function AdminConsumibles() {
                   <td className="p-4">
                     <div className="flex justify-center gap-1.5">
                       <button onClick={() => { setStockModal(s); setStockQty('') }} className="px-2.5 py-1.5 bg-altipiqui-green-light dark:bg-green-900/20 text-altipiqui-green dark:text-green-400 rounded-xl hover:bg-green-200 dark:hover:bg-green-900/30 transition-colors text-xs font-medium flex items-center gap-1">
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9" />
-                        </svg>
+                        <Plus className="w-3 h-3" />
                         Stock
                       </button>
                       <button onClick={() => { setKardexSupply(s); loadKardex(s) }} className="px-2.5 py-1.5 bg-altipiqui-indigo-light dark:bg-altipiqui-indigo/20 text-altipiqui-indigo dark:text-altipiqui-indigo-light rounded-xl hover:bg-altipiqui-indigo/20 dark:hover:bg-altipiqui-indigo/30 transition-colors text-xs font-medium flex items-center gap-1">
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5" />
-                        </svg>
+                        <Package className="w-3 h-3" />
                         Kardex
                       </button>
                       <button onClick={() => openEdit(s)} className="p-1.5 bg-gray-100 dark:bg-dark-border rounded-xl hover:bg-gray-200 dark:hover:bg-dark-bg transition-colors">
-                        <svg className="w-4 h-4 text-gray-600 dark:text-dark-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
-                        </svg>
+                        <Pencil className="w-4 h-4 text-gray-600 dark:text-dark-text-muted" />
                       </button>
                       <button onClick={() => deleteMutation.mutate(s.id)} className="p-1.5 bg-red-50 dark:bg-red-900/20 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors">
-                        <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165" />
-                        </svg>
+                        <Trash2 className="w-4 h-4 text-red-500" />
                       </button>
                     </div>
                   </td>
@@ -177,10 +168,7 @@ export default function AdminConsumibles() {
                 </select>
                 <CategoryManager type={['bebida', 'insumo'] as const} trigger={
                   <button type="button" className="p-2.5 bg-gray-100 dark:bg-dark-border rounded-xl hover:bg-gray-200 dark:hover:bg-dark-bg transition-colors" title="Gestionar categorías">
-                    <svg className="w-5 h-5 text-gray-500 dark:text-dark-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
+                    <Settings className="w-5 h-5 text-gray-500 dark:text-dark-text-muted" />
                   </button>
                 } />
               </div>
@@ -223,9 +211,7 @@ export default function AdminConsumibles() {
           <div className="space-y-4">
             <div className="flex items-center gap-3 bg-altipiqui-green-light dark:bg-green-900/20 rounded-xl p-4">
               <div className="w-10 h-10 rounded-full bg-altipiqui-green/20 flex items-center justify-center">
-                <svg className="w-5 h-5 text-altipiqui-green" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
-                </svg>
+                <Trash2 className="w-5 h-5 text-altipiqui-green" />
               </div>
               <div>
                 <p className="text-sm font-medium dark:text-dark-text">Agregar stock a <strong>{stockModal.name}</strong></p>
@@ -239,9 +225,7 @@ export default function AdminConsumibles() {
             <button onClick={() => addStockMutation.mutate({ id: stockModal.id, qty: Number(stockQty) })} disabled={addStockMutation.isPending || !stockQty}
               className="w-full py-2.5 bg-altipiqui-green text-white rounded-xl hover:bg-green-700 disabled:opacity-50 transition-all font-medium active:scale-[0.97]">
               <span className="flex items-center justify-center gap-1.5">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9" />
-                </svg>
+                <Plus className="w-4 h-4" />
                 Agregar
               </span>
             </button>
@@ -254,9 +238,7 @@ export default function AdminConsumibles() {
           <div className="space-y-4">
             <div className="flex items-center gap-3 bg-altipiqui-indigo-light dark:bg-altipiqui-indigo/10 rounded-xl p-4">
               <div className="w-10 h-10 rounded-full bg-altipiqui-indigo/20 flex items-center justify-center">
-                <svg className="w-5 h-5 text-altipiqui-indigo" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5" />
-                </svg>
+                <Package className="w-5 h-5 text-altipiqui-indigo" />
               </div>
               <div>
                 <p className="text-sm font-medium dark:text-dark-text">
@@ -279,19 +261,14 @@ export default function AdminConsumibles() {
               </div>
               <button onClick={() => loadKardex(kardexSupply)}
                 className="px-4 py-2 bg-altipiqui-indigo text-white rounded-xl hover:bg-altipiqui-indigo-dark transition-all text-sm font-medium active:scale-[0.97] flex items-center gap-1.5">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182" />
-                </svg>
+                <RefreshCw className="w-4 h-4" />
                 Consultar
               </button>
             </div>
 
             {kardexLoading ? (
               <div className="flex items-center justify-center py-8 text-gray-400 dark:text-dark-text-muted">
-                <svg className="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
+                <Loader2 className="animate-spin w-5 h-5 mr-2" />
                 Cargando...
               </div>
             ) : kardexData ? (

@@ -4,6 +4,7 @@ import { getWastes, createWaste } from '../../services/waste.service'
 import { getSupplies } from '../../services/supply.service'
 import { formatDateTime } from '../../utils/format'
 import Modal from '../../components/Modal'
+import { PlusCircle } from 'lucide-react'
 
 export default function AdminPerdidos() {
   const [showModal, setShowModal] = useState(false)
@@ -26,9 +27,7 @@ export default function AdminPerdidos() {
           <p className="text-sm text-gray-500 dark:text-dark-text-muted">Control de mermas y pérdidas</p>
         </div>
         <button onClick={() => setShowModal(true)} className="flex items-center gap-1.5 px-4 py-2 bg-altipiqui-red text-white rounded-xl hover:bg-altipiqui-red-dark transition-all duration-200 shadow-lg shadow-altipiqui-red/20 text-sm font-medium active:scale-[0.97]">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
+          <PlusCircle className="w-4 h-4" />
           Nueva Pérdida
         </button>
       </div>

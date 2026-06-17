@@ -1,3 +1,4 @@
+import { AlertTriangle, PlusCircle, Tag, Pencil, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import type { AxiosError } from 'axios'
@@ -72,9 +73,7 @@ export default function CategoryManager({ type, trigger, title }: CategoryManage
               {categories.length} categoría{categories.length !== 1 ? 's' : ''}
             </p>
             <button onClick={openCreate} className="flex items-center gap-1.5 px-3 py-1.5 bg-altipiqui-red text-white rounded-xl hover:bg-altipiqui-red-dark transition-all text-xs font-medium active:scale-[0.97]">
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+              <PlusCircle className="w-3.5 h-3.5" />
               Nueva categoría
             </button>
           </div>
@@ -87,10 +86,7 @@ export default function CategoryManager({ type, trigger, title }: CategoryManage
                 <div key={cat.id} className="flex items-center justify-between px-4 py-3 rounded-xl bg-altipiqui-cream/50 dark:bg-dark-bg/50 hover:bg-altipiqui-cream dark:hover:bg-dark-bg transition-colors group">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-altipiqui-red/10 flex items-center justify-center">
-                      <svg className="w-4 h-4 text-altipiqui-red" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 6h.008v.008H6V6z" />
-                      </svg>
+                      <Tag className="w-4 h-4 text-altipiqui-red" />
                     </div>
                     <div>
                       <span className="font-medium dark:text-dark-text">{cat.name}</span>
@@ -101,14 +97,10 @@ export default function CategoryManager({ type, trigger, title }: CategoryManage
                   </div>
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button onClick={() => openEdit(cat)} className="p-1.5 bg-gray-100 dark:bg-dark-border rounded-lg hover:bg-gray-200 dark:hover:bg-dark-bg transition-colors">
-                      <svg className="w-3.5 h-3.5 text-gray-500 dark:text-dark-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
-                      </svg>
+                      <Pencil className="w-3.5 h-3.5 text-gray-500 dark:text-dark-text-muted" />
                     </button>
                     <button onClick={() => setDeleteConfirm(cat)} className="p-1.5 bg-red-50 dark:bg-red-900/20 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors">
-                      <svg className="w-3.5 h-3.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165" />
-                      </svg>
+                      <Trash2 className="w-3.5 h-3.5 text-red-500" />
                     </button>
                   </div>
                 </div>
@@ -148,9 +140,7 @@ export default function CategoryManager({ type, trigger, title }: CategoryManage
         {deleteConfirm && (
           <div className="space-y-4">
             <div className="flex items-start gap-3 p-4 bg-red-50 dark:bg-red-900/20 rounded-xl">
-              <svg className="w-5 h-5 text-red-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-              </svg>
+              <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5 shrink-0" />
               <div>
                 <p className="text-sm font-medium text-red-800 dark:text-red-200">
                   ¿Eliminar <strong>{deleteConfirm.name}</strong>?

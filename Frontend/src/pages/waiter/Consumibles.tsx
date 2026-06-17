@@ -1,3 +1,4 @@
+import { Check, ShoppingBag, SquarePlus } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getOrders, serveOrderItem } from '../../services/order.service'
 import { getSupplies } from '../../services/supply.service'
@@ -27,17 +28,23 @@ export default function WaiterConsumibles() {
     const supplyItems = order.items?.filter(i => i.type === 'supply') || []
     if (supplyItems.length === 0) return acc
 
-    const tableNum = order.table?.number || order.tableId
-    if (!acc.has(tableNum)) {
-      acc.set(tableNum, { tableNumber: tableNum, items: [] })
+    const isDineIn = order.orderType === 'PARA_AQUI'
+    const key = isDineIn ? (order.table?.number || 0) : -order.id
+    if (!acc.has(key)) {
+      acc.set(key, { tableNumber: key, items: [] })
     }
     for (const item of supplyItems) {
-      acc.get(tableNum)!.items.push({ item, orderId: order.id, createdAt: order.createdAt })
+      acc.get(key)!.items.push({ item, orderId: order.id, createdAt: order.createdAt })
     }
     return acc
   }, new Map())
 
-  const sortedTables = [...tablesWithSupplies.values()].sort((a, b) => a.tableNumber - b.tableNumber)
+  const sortedTables = [...tablesWithSupplies.values()].sort((a, b) => {
+    if (a.tableNumber > 0 && b.tableNumber > 0) return a.tableNumber - b.tableNumber
+    if (a.tableNumber > 0) return -1
+    if (b.tableNumber > 0) return 1
+    return b.tableNumber - a.tableNumber
+  })
 
   return (
     <div className="space-y-6">
@@ -78,9 +85,13 @@ export default function WaiterConsumibles() {
             <div key={tableNumber} className="bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-border/50 dark:border-dark-border/50 p-5 transition-all hover:shadow-md">
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-8 h-8 rounded-lg bg-altipiqui-red/10 dark:bg-altipiqui-red/20 flex items-center justify-center">
-                  <span className="text-sm font-bold text-altipiqui-red">{tableNumber}</span>
+                  {tableNumber > 0 ? (
+                    <span className="text-sm font-bold text-altipiqui-red">{tableNumber}</span>
+                  ) : (
+                    <ShoppingBag className="w-4 h-4 text-altipiqui-red" />
+                  )}
                 </div>
-                <span className="font-bold text-sm dark:text-dark-text">Mesa {tableNumber}</span>
+                <span className="font-bold text-sm dark:text-dark-text">{tableNumber > 0 ? `Mesa ${tableNumber}` : 'Para Llevar / Delivery'}</span>
               </div>
               <div className="border-t border-border/50 dark:border-dark-border/50 pt-3 space-y-1.5">
                 {filtered.map(({ item, orderId, createdAt }) => {
@@ -96,11 +107,7 @@ export default function WaiterConsumibles() {
                             : 'bg-gray-100 dark:bg-dark-border border border-border dark:border-dark-border hover:bg-altipiqui-green-light hover:border-altipiqui-green'
                         }`}
                       >
-                        {item.served && (
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                          </svg>
-                        )}
+                        {item.served && <Check className="w-3 h-3" />}
                       </button>
                       <span className={`font-medium text-xs flex-shrink-0 ${item.served ? 'text-altipiqui-green line-through' : 'text-gray-500 dark:text-dark-text-muted'}`}>x{item.quantity}</span>
                       <span className={`dark:text-dark-text ${item.served ? 'line-through opacity-60' : ''}`}>{supply?.name || 'Producto'}</span>
@@ -117,9 +124,7 @@ export default function WaiterConsumibles() {
 
         {sortedTables.length === 0 && (
           <div className="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-dark-text-muted">
-            <svg className="w-12 h-12 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-3-3v6m-7 4h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
+            <SquarePlus className="w-12 h-12 mb-2 opacity-50" />
             <p className="text-sm">{filterServed === 'pending' ? 'No hay consumibles pendientes' : filterServed === 'served' ? 'No hay consumibles atendidos' : 'No hay consumibles'}</p>
           </div>
         )}

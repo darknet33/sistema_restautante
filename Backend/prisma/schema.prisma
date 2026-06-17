@@ -29,6 +29,12 @@ enum OrderStatus {
   PAGADO
 }
 
+enum OrderType {
+  PARA_AQUI
+  PARA_LLEVAR
+  DELIVERY
+}
+
 enum MovementType {
   ENTRADA
   MERMA
@@ -116,16 +122,19 @@ model Table {
 }
 
 model Order {
-  id        Int         @id @default(autoincrement())
-  tableId   Int
-  userId    Int
-  status    OrderStatus @default(PENDIENTE)
-  total     Decimal     @db.Decimal(10, 2) @default(0)
-  notes     String?
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  id              Int         @id @default(autoincrement())
+  tableId         Int?
+  userId          Int
+  orderType       OrderType   @default(PARA_AQUI)
+  status          OrderStatus @default(PENDIENTE)
+  total           Decimal     @db.Decimal(10, 2) @default(0)
+  notes           String?
+  deliveryAddress String?
+  deliveryPhone   String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 
-  table Table      @relation(fields: [tableId], references: [id])
+  table Table?     @relation(fields: [tableId], references: [id])
   user  User       @relation(fields: [userId], references: [id])
   items OrderItem[]
 }

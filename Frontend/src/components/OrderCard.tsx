@@ -1,5 +1,6 @@
+import { Check, MessageSquare, UtensilsCrossed, ShoppingBag, Truck } from 'lucide-react'
 import { formatCurrency, formatTime } from '../utils/format'
-import type { Order } from '../types'
+import type { Order, OrderType } from '../types'
 
 interface OrderCardProps {
   order: Order
@@ -39,20 +40,41 @@ const transitionButtonColors: Record<string, string> = {
   PAGADO: 'bg-purple-500 hover:bg-purple-600',
 }
 
+const orderTypeBadge: Record<OrderType, { label: string; bg: string }> = {
+  PARA_AQUI: { label: 'Aquí', bg: 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300' },
+  PARA_LLEVAR: { label: 'Llevar', bg: 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300' },
+  DELIVERY: { label: 'Delivery', bg: 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300' },
+}
 export default function OrderCard({ order, onStatusChange, allowedTransitions, showDetails = true, filterType }: OrderCardProps) {
   const filteredItems = filterType
     ? (order.items || []).filter(i => i.type === filterType)
     : (order.items || [])
+
+  const orderType = order.orderType || 'PARA_AQUI'
+  const badge = orderTypeBadge[orderType]
+  const hasTable = order.table?.number || order.tableId
+
   return (
     <div className={`bg-white dark:bg-dark-surface rounded-xl shadow-sm border border-border/50 dark:border-dark-border/50 border-l-4 ${statusBorders[order.status] || 'border-l-gray-300'} p-4 transition-all hover:shadow-md`}>
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
-          <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-altipiqui-red/10 dark:bg-altipiqui-red/20 text-altipiqui-red font-bold text-sm">
-            {order.table?.number || order.tableId}
+          <span className={`flex items-center justify-center w-8 h-8 rounded-lg font-bold text-sm ${badge.bg}`}>
+            {hasTable ? order.table?.number || order.tableId : (
+              orderType === 'PARA_AQUI' ? <UtensilsCrossed className="w-4 h-4" /> :
+              orderType === 'PARA_LLEVAR' ? <ShoppingBag className="w-4 h-4" /> :
+              <Truck className="w-4 h-4" />
+            )}
           </span>
           <div>
-            <p className="font-bold text-sm dark:text-dark-text">Mesa {order.table?.number || order.tableId}</p>
-            <span className="text-[10px] text-gray-400 dark:text-dark-text-muted font-mono">#{order.id}</span>
+            <p className="font-bold text-sm dark:text-dark-text">
+              {hasTable ? `Mesa ${order.table?.number || order.tableId}` : badge.label}
+            </p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className={`inline-block text-[10px] px-1.5 py-0.5 rounded-full font-medium ${badge.bg}`}>
+                {badge.label}
+              </span>
+              <span className="text-[10px] text-gray-400 dark:text-dark-text-muted font-mono">#{order.id}</span>
+            </div>
           </div>
         </div>
         <span className="text-[10px] text-gray-400 dark:text-dark-text-muted whitespace-nowrap">
@@ -73,9 +95,7 @@ export default function OrderCard({ order, onStatusChange, allowedTransitions, s
             )}
             {item.type === 'supply' && item.served && (
               <span className="w-3.5 h-3.5 rounded-full bg-altipiqui-green flex items-center justify-center flex-shrink-0" title="Atendido">
-                <svg className="w-2 h-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={4}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                </svg>
+                <Check className="w-2 h-2 text-white" />
               </span>
             )}
             <span className="font-semibold text-gray-500 dark:text-dark-text-muted text-xs">x{item.quantity}</span>
@@ -89,9 +109,7 @@ export default function OrderCard({ order, onStatusChange, allowedTransitions, s
 
       {order.notes && (
         <div className="flex items-start gap-1.5 text-[11px] text-gray-500 dark:text-dark-text-muted bg-altipiqui-cream dark:bg-dark-bg rounded-xl p-2.5 mb-3">
-          <svg className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
-          </svg>
+          <MessageSquare className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
           <span>{order.notes}</span>
         </div>
       )}

@@ -1,3 +1,4 @@
+import { AlertCircle, Check } from 'lucide-react'
 import { formatCurrency } from '../utils/format'
 import type { Dish } from '../types'
 
@@ -29,18 +30,14 @@ export default function DishSelector({ dishes, selectedIds, onToggle }: DishSele
             )}
             {!dish.imageUrl && (
               <div className="w-full h-16 bg-altipiqui-cream dark:bg-dark-bg rounded-xl mb-2 flex items-center justify-center">
-                <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+                <AlertCircle className="w-6 h-6 text-gray-400" />
               </div>
             )}
             <p className="font-medium text-sm dark:text-dark-text">{dish.name}</p>
             <p className="text-altipiqui-red font-bold text-sm mt-1">{formatCurrency(dish.price)}</p>
             {selected && (
               <span className="absolute top-3 right-3 bg-altipiqui-red text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shadow-lg shadow-altipiqui-red/30">
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                </svg>
+                <Check className="w-3.5 h-3.5" />
               </span>
             )}
           </button>

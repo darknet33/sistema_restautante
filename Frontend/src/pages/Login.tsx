@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { User as UserIcon, Lock, AlertTriangle, Loader2 } from 'lucide-react'
 import { useMutation } from '@tanstack/react-query'
 import { login as loginApi } from '../services/auth.service'
 import type { User } from '../types'
@@ -51,9 +52,7 @@ export default function Login({ onLogin }: LoginProps) {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Usuario</label>
               <div className="relative">
-                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-                </svg>
+                <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="text"
                   value={username}
@@ -69,9 +68,7 @@ export default function Login({ onLogin }: LoginProps) {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Contraseña</label>
               <div className="relative">
-                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-                </svg>
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="password"
                   value={password}
@@ -86,9 +83,7 @@ export default function Login({ onLogin }: LoginProps) {
 
             {mutation.isError && (
               <div className="flex items-center gap-2 text-sm text-red-700 bg-red-50 rounded-xl p-3">
-                <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-                </svg>
+                <AlertTriangle className="w-5 h-5 flex-shrink-0" />
                 <span>{typeof mutation.error === 'object' && mutation.error !== null && 'response' in mutation.error
                   ? (mutation.error as any).response?.data?.message || 'Error al iniciar sesión'
                   : 'Error al iniciar sesión'}</span>
@@ -102,10 +97,7 @@ export default function Login({ onLogin }: LoginProps) {
             >
               {mutation.isPending ? (
                 <span className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
+                  <Loader2 className="animate-spin w-4 h-4" />
                   <span>Iniciando sesión...</span>
                 </span>
               ) : 'Iniciar Sesión'}

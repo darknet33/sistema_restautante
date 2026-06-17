@@ -65,15 +65,20 @@ export interface OrderItem {
   supply?: Supply
 }
 
+export type OrderType = 'PARA_AQUI' | 'PARA_LLEVAR' | 'DELIVERY'
+
 export interface Order {
   id: number
-  tableId: number
+  tableId?: number
   table?: Table
   userId: number
   user?: { id: number; name: string }
+  orderType: OrderType
   status: 'PENDIENTE' | 'EN_COCINA' | 'LISTO' | 'SERVIDO' | 'PAGADO'
   total: number
   notes?: string
+  deliveryAddress?: string
+  deliveryPhone?: string
   items?: OrderItem[]
   createdAt: string
   updatedAt: string

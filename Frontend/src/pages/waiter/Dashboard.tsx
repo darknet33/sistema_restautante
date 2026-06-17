@@ -1,4 +1,6 @@
+import { PlusCircle, Tag } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
 import { getOrders, updateOrderStatus } from '../../services/order.service'
 import { getTables } from '../../services/table.service'
 import { useOrderCreated, useOrderStatusChanged, useSocket } from '../../hooks/useSocket'
@@ -12,11 +14,8 @@ const columns = [
   { status: 'SERVIDO', label: 'Servidos', color: 'orange', bg: 'bg-orange-50' },
 ]
 
-const allowedTransitions: Record<string, string[]> = {
-  LISTO: ['SERVIDO'],
-}
-
 export default function WaiterDashboard() {
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
 
   useSocket('waiter')
@@ -36,23 +35,33 @@ export default function WaiterDashboard() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-heading font-bold dark:text-dark-text">Dashboard Mesero</h2>
-        <p className="text-sm text-gray-500 dark:text-dark-text-muted">Gestiona los pedidos y mesas</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-heading font-bold dark:text-dark-text">Dashboard Mesero</h2>
+          <p className="text-sm text-gray-500 dark:text-dark-text-muted">Gestiona los pedidos y mesas</p>
+        </div>
+        <button
+          onClick={() => navigate('/mesero/nuevo-pedido')}
+          className="flex items-center gap-1.5 px-4 py-2 bg-altipiqui-red text-white rounded-xl hover:bg-altipiqui-red-dark transition-all duration-200 shadow-lg shadow-altipiqui-red/20 text-sm font-semibold active:scale-[0.97]"
+        >
+          <PlusCircle className="w-4 h-4" />
+          Nuevo Pedido
+        </button>
       </div>
 
       <KanbanBoard
         columns={columns}
         orders={orders}
         onStatusChange={(id, status) => statusMutation.mutate({ id, status })}
-        allowedTransitions={allowedTransitions}
+        getOrderTransitions={(order) => {
+          if (order.status === 'LISTO' && order.orderType === 'PARA_AQUI') return ['SERVIDO']
+          return []
+        }}
       />
 
       <div>
         <div className="flex items-center gap-2 mb-4">
-          <svg className="w-5 h-5 text-altipiqui-indigo" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" />
-          </svg>
+          <Tag className="w-5 h-5 text-altipiqui-indigo" />
           <h3 className="font-heading font-semibold dark:text-dark-text">Mesas</h3>
         </div>
         <TableCanvas tables={tables} />

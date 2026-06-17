@@ -4,6 +4,7 @@ import type { AxiosError } from 'axios'
 import { getUsers, createUser, updateUser, deleteUser } from '../../services/auth.service'
 import Modal from '../../components/Modal'
 import type { User } from '../../types'
+import { PlusCircle, Pencil, Trash2 } from 'lucide-react'
 
 export default function AdminUsuarios() {
   const [showModal, setShowModal] = useState(false)
@@ -55,9 +56,7 @@ export default function AdminUsuarios() {
           <p className="text-sm text-gray-500 dark:text-dark-text-muted">Gestión de usuarios del sistema</p>
         </div>
         <button onClick={openCreate} className="flex items-center gap-1.5 px-4 py-2 bg-altipiqui-red text-white rounded-xl hover:bg-altipiqui-red-dark transition-all duration-200 shadow-lg shadow-altipiqui-red/20 text-sm font-medium active:scale-[0.97]">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
+          <PlusCircle className="w-4 h-4" />
           Nuevo Usuario
         </button>
       </div>
@@ -84,14 +83,10 @@ export default function AdminUsuarios() {
                   <td className="p-4">
                     <div className="flex justify-center gap-1.5">
                       <button onClick={() => openEdit(u)} className="p-1.5 bg-gray-100 dark:bg-dark-border rounded-xl hover:bg-gray-200 dark:hover:bg-dark-bg transition-colors">
-                        <svg className="w-4 h-4 text-gray-600 dark:text-dark-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
-                        </svg>
+                        <Pencil className="w-4 h-4 text-gray-600 dark:text-dark-text-muted" />
                       </button>
                       <button onClick={() => deleteMutation.mutate(u.id)} className="p-1.5 bg-red-50 dark:bg-red-900/20 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors">
-                        <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165" />
-                        </svg>
+                        <Trash2 className="w-4 h-4 text-red-500" />
                       </button>
                     </div>
                   </td>

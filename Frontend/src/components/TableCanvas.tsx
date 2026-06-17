@@ -1,4 +1,5 @@
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { ChevronsUpDown, Check, PlusSquare } from 'lucide-react'
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import type { Table } from '../types'
 
 interface TableCanvasProps {
@@ -28,6 +29,29 @@ export default function TableCanvas({ tables, onTableClick, editable, onSaveLayo
   const offsetRef = useRef({ x: 0, y: 0 })
   const dragPositions = useRef<Map<number, { posX: number; posY: number }>>(new Map())
   const [, setTick] = useState(0)
+  const [scale, setScale] = useState(1)
+
+  const contentBounds = useMemo(() => {
+    const pad = 40
+    const maxX = tables.reduce((max, t) => Math.max(max, (t.posX || 0) + (t.width || 80)), 0) + pad
+    const maxY = tables.reduce((max, t) => Math.max(max, (t.posY || 0) + (t.height || 80)), 0) + pad
+    return { width: Math.max(maxX, 600), height: Math.max(maxY, 400) }
+  }, [tables])
+
+  useEffect(() => {
+    const container = canvasRef.current
+    if (!container) return
+
+    const observer = new ResizeObserver((entries) => {
+      const { width } = entries[0].contentRect
+      if (width === 0) return
+      const newScale = Math.min(1, width / contentBounds.width)
+      setScale(newScale)
+    })
+
+    observer.observe(container)
+    return () => observer.disconnect()
+  }, [contentBounds.width])
 
   const getPos = (table: Table) => {
     const drag = dragPositions.current.get(table.id)
@@ -46,11 +70,11 @@ export default function TableCanvas({ tables, onTableClick, editable, onSaveLayo
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (dragId === null || !canvasRef.current) return
     const canvasRect = canvasRef.current.getBoundingClientRect()
-    const x = Math.max(0, e.clientX - canvasRect.left - offsetRef.current.x)
-    const y = Math.max(0, e.clientY - canvasRect.top - offsetRef.current.y)
+    const x = Math.max(0, (e.clientX - canvasRect.left - offsetRef.current.x) / scale)
+    const y = Math.max(0, (e.clientY - canvasRect.top - offsetRef.current.y) / scale)
     dragPositions.current.set(dragId, { posX: Math.round(x), posY: Math.round(y) })
     setTick(t => t + 1)
-  }, [dragId])
+  }, [dragId, scale])
 
   const handleMouseUp = useCallback(() => {
     setDragId(null)
@@ -81,9 +105,7 @@ export default function TableCanvas({ tables, onTableClick, editable, onSaveLayo
       {editable && (
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-dark-text-muted">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9" />
-            </svg>
+            <ChevronsUpDown className="w-4 h-4" />
             <span>Arrastra las mesas para posicionarlas</span>
           </div>
           <button
@@ -91,9 +113,7 @@ export default function TableCanvas({ tables, onTableClick, editable, onSaveLayo
             className="px-4 py-2 bg-altipiqui-red text-white text-sm rounded-xl hover:bg-altipiqui-red-dark transition-all duration-200 shadow-lg shadow-altipiqui-red/20 active:scale-[0.97]"
           >
             <span className="flex items-center gap-1.5">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-              </svg>
+              <Check className="w-4 h-4" />
               Guardar Layout
             </span>
           </button>
@@ -102,54 +122,62 @@ export default function TableCanvas({ tables, onTableClick, editable, onSaveLayo
 
       <div
         ref={canvasRef}
-        className="relative bg-white dark:bg-dark-surface rounded-2xl border-2 border-dashed border-border dark:border-dark-border"
+        className="relative bg-white dark:bg-dark-surface rounded-2xl border-2 border-dashed border-border dark:border-dark-border overflow-hidden"
         style={{ minHeight: 400, height: '60vh' }}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
       >
-        {tables.map((table) => {
-          const { posX, posY } = getPos(table)
-          const isDragging = dragId === table.id
-          return (
-            <div
-              key={table.id}
-              onClick={() => !editable && onTableClick?.(table)}
-              onMouseDown={(e) => handleMouseDown(e, table)}
-              className={`
-                absolute flex items-center justify-center cursor-pointer select-none
-                transition-all duration-150
-                ${editable ? 'cursor-grab active:cursor-grabbing' : 'hover:scale-105'}
-                ${statusColors[table.status] || 'bg-gradient-to-br from-gray-400 to-gray-500'}
-                ${isDragging ? 'scale-110 shadow-2xl z-10' : 'shadow-lg'}
-              `}
-              style={{
-                left: posX ?? 100 + (table.number * 20),
-                top: posY ?? 100 + (table.number * 20),
-                width: table.width || 80,
-                height: table.height || 80,
-                borderRadius: table.shape === 'circle' ? '50%' : table.shape === 'square' ? '12px' : '16px',
-              }}
-            >
-              <div className="text-center text-white pointer-events-none">
-                <div className="text-lg font-bold leading-tight">{table.number}</div>
-                <div className="text-[10px] opacity-80">{table.seats} as.</div>
-                {!editable && (
-                  <div className="text-[8px] mt-0.5 opacity-70 font-medium">{statusLabels[table.status]}</div>
-                )}
+        <div
+          style={{
+            transform: `scale(${scale})`,
+            transformOrigin: 'top left',
+            width: contentBounds.width,
+            height: contentBounds.height,
+            position: 'relative',
+          }}
+        >
+          {tables.map((table) => {
+            const { posX, posY } = getPos(table)
+            const isDragging = dragId === table.id
+            return (
+              <div
+                key={table.id}
+                onClick={() => !editable && onTableClick?.(table)}
+                onMouseDown={(e) => handleMouseDown(e, table)}
+                className={`
+                  absolute flex items-center justify-center cursor-pointer select-none
+                  transition-all duration-150
+                  ${editable ? 'cursor-grab active:cursor-grabbing' : 'hover:scale-105'}
+                  ${statusColors[table.status] || 'bg-gradient-to-br from-gray-400 to-gray-500'}
+                  ${isDragging ? 'scale-110 shadow-2xl z-10' : 'shadow-lg'}
+                `}
+                style={{
+                  left: posX ?? 100 + (table.number * 20),
+                  top: posY ?? 100 + (table.number * 20),
+                  width: table.width || 80,
+                  height: table.height || 80,
+                  borderRadius: table.shape === 'circle' ? '50%' : table.shape === 'square' ? '12px' : '16px',
+                }}
+              >
+                <div className="text-center text-white pointer-events-none">
+                  <div className="text-lg font-bold leading-tight">{table.number}</div>
+                  <div className="text-[10px] opacity-80">{table.seats} as.</div>
+                  {!editable && (
+                    <div className="text-[8px] mt-0.5 opacity-70 font-medium">{statusLabels[table.status]}</div>
+                  )}
+                </div>
               </div>
-            </div>
-          )
-        })}
+            )
+          })}
 
-        {tables.length === 0 && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400 dark:text-dark-text-muted">
-            <svg className="w-12 h-12 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-3-3v6m-7 4h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
-            <p className="text-sm">No hay mesas configuradas</p>
-          </div>
-        )}
+          {tables.length === 0 && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400 dark:text-dark-text-muted">
+              <PlusSquare className="w-12 h-12 mb-2 opacity-50" />
+              <p className="text-sm">No hay mesas configuradas</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

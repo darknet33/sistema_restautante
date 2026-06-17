@@ -1,49 +1,185 @@
 import PdfPrinter from 'pdfmake/js/Printer'
+import path from 'path'
+import fs from 'fs'
+
+const fontDir = path.join(path.dirname(require.resolve('pdfmake/package.json')), 'fonts', 'Roboto')
 
 const fonts = {
   Roboto: {
-    normal: 'Helvetica',
-    bold: 'Helvetica-Bold',
-    italics: 'Helvetica-Oblique',
-    bolditalics: 'Helvetica-BoldOblique'
+    normal: path.join(fontDir, 'Roboto-Regular.ttf'),
+    bold: path.join(fontDir, 'Roboto-Medium.ttf'),
+    italics: path.join(fontDir, 'Roboto-Italic.ttf'),
+    bolditalics: path.join(fontDir, 'Roboto-MediumItalic.ttf'),
   }
 }
 
-const printer = new (PdfPrinter as any)(fonts, null, { resolve: () => '' })
+const virtualfs = {
+  existsSync: (filePath: string) => fs.existsSync(filePath),
+  readFileSync: (filePath: string) => fs.readFileSync(filePath),
+}
+
+const urlResolver = {
+  resolve: () => {},
+  resolved: () => Promise.resolve(),
+}
+
+const printer = new (PdfPrinter as any)(fonts, virtualfs, urlResolver)
+
+const LINE = '─'.repeat(40)
+const DOUBLE_LINE = '═'.repeat(40)
+
+function formatHeader(order: any) {
+  const lines: any[] = [
+    { text: 'ALTIPIQUI', style: 'title', alignment: 'center' as const },
+    { text: 'Restaurante para todos', style: 'subtitle', alignment: 'center' as const, margin: [0, 0, 0, 4] },
+    { text: DOUBLE_LINE, style: 'line', alignment: 'center' as const },
+    { text: '', margin: [0, 2, 0, 0] },
+  ]
+  return lines
+}
+
+function formatOrderInfo(order: any) {
+  const mesaText = order.orderType === 'PARA_AQUI'
+    ? `Mesa: ${order.table?.number || order.tableId}`
+    : order.orderType === 'DELIVERY'
+      ? 'DELIVERY'
+      : 'PARA LLEVAR'
+
+  const lines: any[] = [
+    {
+      columns: [
+        { text: mesaText, style: 'bold', width: '50%' },
+        { text: `#${order.id}`, style: 'bold', alignment: 'right' as const, width: '50%' },
+      ],
+      margin: [0, 0, 0, 2]
+    },
+  ]
+
+  if (order.user?.name) {
+    lines.push({
+      columns: [
+        { text: `Mesero: ${order.user.name}`, style: 'normal', width: '100%' },
+      ],
+      margin: [0, 0, 0, 1]
+    })
+  }
+
+  if (order.orderType === 'DELIVERY') {
+    if (order.deliveryAddress) lines.push({ text: `Dirección: ${order.deliveryAddress}`, style: 'normal', margin: [0, 0, 0, 1] })
+    if (order.deliveryPhone) lines.push({ text: `Teléfono: ${order.deliveryPhone}`, style: 'normal', margin: [0, 0, 0, 1] })
+  }
+
+  lines.push(
+    { text: `Hora: ${new Date(order.createdAt).toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' })}`, style: 'normal', margin: [0, 0, 0, 2] },
+    { text: LINE, style: 'line', alignment: 'center' as const },
+    { text: '', margin: [0, 1, 0, 0] },
+  )
+
+  return lines
+}
+
+function formatItems(items: any[], showPrices: boolean) {
+  const body: any[] = []
+
+  for (const item of items) {
+    const name = item.dish?.name || item.supply?.name || 'Producto'
+    const qty = Number(item.quantity)
+    const price = Number(item.unitPrice)
+    const subtotal = qty * price
+
+    if (showPrices) {
+      body.push({
+        columns: [
+          { text: `x${qty}`, width: 28, style: 'normal' },
+          { text: name, width: '*', style: 'normal' },
+          { text: `${subtotal.toFixed(2)}`, width: 50, alignment: 'right' as const, style: 'normal' },
+        ],
+        margin: [0, 0, 0, 1]
+      })
+    } else {
+      body.push({
+        columns: [
+          { text: `x${qty}`, width: 28, style: 'normal' },
+          { text: name, width: '*', style: 'normal' },
+        ],
+        margin: [0, 0, 0, 1]
+      })
+    }
+
+    if (item.notes) {
+      body.push({
+        text: `  * ${item.notes}`,
+        style: 'note',
+        margin: [28, 0, 0, 2]
+      })
+    }
+  }
+
+  return body
+}
 
 export async function generateKitchenTicket(order: any): Promise<Buffer> {
   try {
-    const items = (order.items || []).map((item: any) => {
-      const name = item.dish?.name || item.supply?.name || 'Producto'
-      const notes = item.notes ? `\n  📝 ${item.notes}` : ''
-      return `  x${item.quantity}  ${name}${notes}`
-    }).join('\n')
+    const dishItems = (order.items || []).filter((i: any) => i.type === 'dish')
+    const supplyItems = (order.items || []).filter((i: any) => i.type === 'supply')
+
+    const content: any[] = [
+      ...formatHeader(order),
+      { text: 'TICKET COCINA', style: 'subtitle', alignment: 'center' as const },
+      { text: '', margin: [0, 2, 0, 0] },
+      ...formatOrderInfo(order),
+    ]
+
+    if (dishItems.length > 0) {
+      content.push(
+        { text: 'PLATOS', style: 'section', margin: [0, 0, 0, 2] },
+        ...formatItems(dishItems, false),
+      )
+    }
+
+    if (supplyItems.length > 0) {
+      if (dishItems.length > 0) content.push({ text: '', margin: [0, 2, 0, 0] })
+      content.push(
+        { text: 'BEBIDAS / EXTRAS', style: 'section', margin: [0, 0, 0, 2] },
+        ...formatItems(supplyItems, false),
+      )
+    }
+
+    if (order.notes) {
+      content.push(
+        { text: '', margin: [0, 2, 0, 0] },
+        { text: LINE, style: 'line', alignment: 'center' as const },
+        { text: `Notas: ${order.notes}`, style: 'note', margin: [0, 4, 0, 0] },
+      )
+    }
+
+    content.push(
+      { text: '', margin: [0, 4, 0, 0] },
+      { text: LINE, style: 'line', alignment: 'center' as const },
+      { text: '', margin: [0, 4, 0, 0] },
+      { text: '¡Buen provecho!', alignment: 'center' as const, style: 'footer' },
+    )
 
     const docDefinition: any = {
       pageSize: { width: 80 * 2.83, height: 'auto' },
-      pageMargins: [10, 10, 10, 10],
-      content: [
-        { text: '=== TICKET COCINA ===', style: 'header', alignment: 'center' },
-        { text: `Mesa: ${order.table?.number || order.tableId}`, style: 'subheader' },
-        { text: `Orden #${order.id}`, style: 'subheader' },
-        { text: `Hora: ${new Date(order.createdAt).toLocaleTimeString()}`, margin: [0, 0, 0, 8] },
-        { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 200, y2: 0, lineWidth: 1 }] },
-        { text: '\n' + items + '\n', margin: [0, 4, 0, 4] },
-        { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 200, y2: 0, lineWidth: 1 }] },
-        order.notes ? { text: `Notas generales: ${order.notes}`, margin: [0, 4, 0, 0] } : {},
-        { text: '\nGracias!', alignment: 'center', color: 'gray', fontSize: 8 }
-      ],
+      pageMargins: [8, 8, 8, 8],
+      content,
       styles: {
-        header: { fontSize: 12, bold: true, margin: [0, 0, 0, 4] },
-        subheader: { fontSize: 10, bold: true, margin: [0, 2, 0, 2] }
+        title: { fontSize: 14, bold: true, font: 'Roboto' },
+        subtitle: { fontSize: 10, bold: true, font: 'Roboto' },
+        section: { fontSize: 9, bold: true, font: 'Roboto', decoration: 'underline' },
+        bold: { fontSize: 9, bold: true, font: 'Roboto' },
+        normal: { fontSize: 9, font: 'Roboto' },
+        note: { fontSize: 8, italics: true, font: 'Roboto', color: '#666666' },
+        line: { fontSize: 8, font: 'Roboto' },
+        footer: { fontSize: 8, color: '#999999' },
       }
     }
 
     const pdfDoc = await printer.createPdfKitDocument(docDefinition)
     const chunks: Buffer[] = []
-    pdfDoc.on('data', (chunk: Buffer) => chunks.push(chunk))
-    pdfDoc.on('end', () => {})
     return new Promise((resolve, reject) => {
+      pdfDoc.on('data', (chunk: Buffer) => chunks.push(chunk))
       pdfDoc.on('end', () => resolve(Buffer.concat(chunks)))
       pdfDoc.on('error', reject)
       pdfDoc.end()
@@ -55,58 +191,62 @@ export async function generateKitchenTicket(order: any): Promise<Buffer> {
 
 export async function generateCustomerReceipt(order: any): Promise<Buffer> {
   try {
-    const itemsLines = (order.items || []).map((item: any) => {
-      const name = item.dish?.name || item.supply?.name || 'Producto'
-      const qty = Number(item.quantity)
-      const price = Number(item.unitPrice)
-      const subtotal = qty * price
-      return [
-        { text: `x${qty}`, alignment: 'left', width: 30 },
-        { text: name, alignment: 'left', width: 100 },
-        { text: `${price.toFixed(2)}`, alignment: 'right', width: 40 },
-        { text: `${subtotal.toFixed(2)}`, alignment: 'right', width: 40 }
-      ]
-    })
+    const dishItems = (order.items || []).filter((i: any) => i.type === 'dish')
+    const supplyItems = (order.items || []).filter((i: any) => i.type === 'supply')
+
+    const content: any[] = [
+      ...formatHeader(order),
+      { text: 'CUENTA', style: 'subtitle', alignment: 'center' as const },
+      { text: '', margin: [0, 2, 0, 0] },
+      ...formatOrderInfo(order),
+    ]
+
+    if (dishItems.length > 0) {
+      content.push(
+        { text: 'PLATOS', style: 'section', margin: [0, 0, 0, 2] },
+        ...formatItems(dishItems, true),
+      )
+    }
+
+    if (supplyItems.length > 0) {
+      if (dishItems.length > 0) content.push({ text: '', margin: [0, 2, 0, 0] })
+      content.push(
+        { text: 'BEBIDAS / EXTRAS', style: 'section', margin: [0, 0, 0, 2] },
+        ...formatItems(supplyItems, true),
+      )
+    }
+
+    content.push(
+      { text: '', margin: [0, 2, 0, 0] },
+      { text: LINE, style: 'line', alignment: 'center' as const },
+      { text: '', margin: [0, 2, 0, 0] },
+      {
+        columns: [
+          { text: 'TOTAL:', width: '*', style: 'total' },
+          { text: `Bs. ${Number(order.total).toFixed(2)}`, width: 80, alignment: 'right' as const, style: 'total' },
+        ],
+        margin: [0, 0, 0, 0]
+      },
+      { text: '', margin: [0, 2, 0, 0] },
+      { text: LINE, style: 'line', alignment: 'center' as const },
+      { text: '', margin: [0, 6, 0, 0] },
+      { text: '¡Gracias por su visita!', alignment: 'center' as const, style: 'footer' },
+    )
 
     const docDefinition: any = {
       pageSize: { width: 80 * 2.83, height: 'auto' },
-      pageMargins: [10, 10, 10, 10],
-      content: [
-        { text: '=== CUENTA ===', style: 'header', alignment: 'center' },
-        { text: `Mesa: ${order.table?.number || order.tableId}`, style: 'subheader' },
-        { text: `Orden #${order.id}`, margin: [0, 0, 0, 8] },
-        { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 200, y2: 0, lineWidth: 1 }] },
-        { text: '\n' },
-        {
-          layout: 'noBorders',
-          table: {
-            headerRows: 1,
-            widths: [30, 100, 40, 40],
-            body: [
-              [
-                { text: 'Cant', style: 'tableHeader' },
-                { text: 'Producto', style: 'tableHeader' },
-                { text: 'P/U', style: 'tableHeader', alignment: 'right' },
-                { text: 'Subtotal', style: 'tableHeader', alignment: 'right' }
-              ],
-              ...itemsLines,
-              [
-                {},
-                {},
-                { text: 'TOTAL:', style: 'total', alignment: 'right', colSpan: 1 },
-                { text: `${Number(order.total).toFixed(2)}`, style: 'total', alignment: 'right' }
-              ]
-            ]
-          }
-        },
-        { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 200, y2: 0, lineWidth: 1 }] },
-        { text: '\n¡Gracias por su visita!', alignment: 'center', color: 'gray', fontSize: 10 }
-      ],
+      pageMargins: [8, 8, 8, 8],
+      content,
       styles: {
-        header: { fontSize: 14, bold: true, margin: [0, 0, 0, 4] },
-        subheader: { fontSize: 10, bold: true, margin: [0, 2, 0, 2] },
-        tableHeader: { fontSize: 9, bold: true, color: 'gray' },
-        total: { fontSize: 11, bold: true }
+        title: { fontSize: 14, bold: true, font: 'Roboto' },
+        subtitle: { fontSize: 10, bold: true, font: 'Roboto' },
+        section: { fontSize: 9, bold: true, font: 'Roboto', decoration: 'underline' },
+        bold: { fontSize: 9, bold: true, font: 'Roboto' },
+        normal: { fontSize: 9, font: 'Roboto' },
+        note: { fontSize: 8, italics: true, font: 'Roboto', color: '#666666' },
+        line: { fontSize: 8, font: 'Roboto' },
+        total: { fontSize: 11, bold: true, font: 'Roboto' },
+        footer: { fontSize: 8, color: '#999999' },
       }
     }
 
