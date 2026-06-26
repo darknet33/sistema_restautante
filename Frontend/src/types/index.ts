@@ -74,7 +74,7 @@ export interface Order {
   userId: number
   user?: { id: number; name: string }
   orderType: OrderType
-  status: 'PENDIENTE' | 'EN_COCINA' | 'LISTO' | 'SERVIDO' | 'PAGADO'
+  status: 'PENDIENTE' | 'EN_COCINA' | 'LISTO' | 'SERVIDO' | 'PAGADO' | 'ENTREGADO'
   total: number
   notes?: string
   deliveryAddress?: string

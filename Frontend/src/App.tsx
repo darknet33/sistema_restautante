@@ -13,6 +13,7 @@ import AdminPerdidos from "./pages/admin/Perdidos"
 import AdminMenu from "./pages/admin/Menu"
 import AdminUsuarios from "./pages/admin/Usuarios"
 import AdminReportes from "./pages/admin/Reportes"
+import AdminMesas from "./pages/admin/Mesas"
 
 import CajeroDashboard from "./pages/cajero/Dashboard"
 
@@ -58,7 +59,9 @@ function App() {
                 <Route path="/admin/menu" element={<AdminMenu />} />
                 <Route path="/admin/usuarios" element={<AdminUsuarios />} />
                 <Route path="/admin/reportes" element={<AdminReportes />} />
+                <Route path="/admin/mesas" element={<AdminMesas />} />
                 <Route path="/admin/nuevo-pedido" element={<WaiterNewOrder />} />
+                <Route path="/admin/atender-consumibles" element={<WaiterConsumibles />} />
               </>
             )}
 

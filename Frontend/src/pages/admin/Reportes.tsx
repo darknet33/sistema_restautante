@@ -1,18 +1,33 @@
 import { useState } from 'react'
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getDailySales, getTopDishes, closeTurno } from '../../services/report.service'
-import { formatCurrency } from '../../utils/format'
-import { DollarSign, ShoppingBag, Package, Star, Lock } from 'lucide-react'
+import { formatCurrency, formatDateTime } from '../../utils/format'
+import Modal from '../../components/Modal'
+import { DollarSign, ShoppingBag, Package, Star, Lock, CheckCircle } from 'lucide-react'
 
 export default function AdminReportes() {
   const [filter, setFilter] = useState('all')
+  const [closeResult, setCloseResult] = useState<{ totalSales: number; totalOrders: number; closedCaja?: { openingAmount: number } | null } | null>(null)
+  const queryClient = useQueryClient()
 
   const { data: sales } = useQuery({ queryKey: ['dailySales'], queryFn: getDailySales, refetchInterval: 10000 })
   const { data: topDishes = [] } = useQuery({ queryKey: ['topDishes', filter], queryFn: () => getTopDishes(filter === 'all' ? undefined : filter) })
 
   const closeMutation = useMutation({
     mutationFn: closeTurno,
-    onSuccess: () => alert('Turno cerrado exitosamente'),
+    onSuccess: (data: any) => {
+      setCloseResult({
+        totalSales: data.closure?.totalSales ?? 0,
+        totalOrders: data.closure?.totalOrders ?? 0,
+        closedCaja: data.closedCaja ?? null,
+      })
+      queryClient.invalidateQueries({ queryKey: ['dailySales'] })
+      queryClient.invalidateQueries({ queryKey: ['topDishes'] })
+      queryClient.invalidateQueries({ queryKey: ['currentCaja'] })
+    },
+    onError: (error: any) => {
+      alert(error.response?.data?.message || 'Error al cerrar turno')
+    },
   })
 
   return (
@@ -93,6 +108,45 @@ export default function AdminReportes() {
         <Lock className="w-5 h-5" />
         {closeMutation.isPending ? 'Cerrando...' : 'Cerrar Turno'}
       </button>
+
+      <Modal open={!!closeResult} onClose={() => setCloseResult(null)} title="Turno Cerrado" size="sm">
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 rounded-full bg-altipiqui-green-light dark:bg-green-900/30 flex items-center justify-center mx-auto">
+            <CheckCircle className="w-8 h-8 text-altipiqui-green" />
+          </div>
+          <p className="text-lg font-heading font-bold dark:text-dark-text">Turno cerrado exitosamente</p>
+          {closeResult && (
+            <>
+              <div className="bg-altipiqui-cream dark:bg-dark-bg rounded-2xl p-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500 dark:text-dark-text-muted">Total ventas</span>
+                  <span className="font-bold text-altipiqui-red">{formatCurrency(closeResult.totalSales)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500 dark:text-dark-text-muted">Pedidos</span>
+                  <span className="font-bold dark:text-dark-text">{closeResult.totalOrders}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500 dark:text-dark-text-muted">Ticket promedio</span>
+                  <span className="font-bold text-altipiqui-green">
+                    {formatCurrency(closeResult.totalOrders > 0 ? closeResult.totalSales / closeResult.totalOrders : 0)}
+                  </span>
+                </div>
+                {closeResult.closedCaja && (
+                  <div className="pt-2 mt-2 border-t border-border/50 dark:border-dark-border/50 flex justify-between text-sm">
+                    <span className="text-gray-500 dark:text-dark-text-muted">Caja cerrada</span>
+                    <span className="font-bold dark:text-dark-text">Monto inicial: {formatCurrency(closeResult.closedCaja.openingAmount)}</span>
+                  </div>
+                )}
+              </div>
+              <button onClick={() => setCloseResult(null)}
+                className="px-6 py-2.5 bg-altipiqui-red text-white rounded-xl hover:bg-altipiqui-red-dark transition-all duration-200 shadow-lg shadow-altipiqui-red/20 font-medium active:scale-[0.97]">
+                Aceptar
+              </button>
+            </>
+          )}
+        </div>
+      </Modal>
     </div>
   )
 }

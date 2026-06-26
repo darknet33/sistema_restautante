@@ -22,6 +22,7 @@ export default function AdminCaja() {
   const [openingAmount, setOpeningAmount] = useState('')
   const [closingAmount, setClosingAmount] = useState('')
   const [showHistory, setShowHistory] = useState(false)
+  const [closeSummary, setCloseSummary] = useState<{ openingAmount: number; closingAmount: number } | null>(null)
   const queryClient = useQueryClient()
 
   useOrderCreated(() => queryClient.invalidateQueries({ queryKey: ['orders'] }))
@@ -56,9 +57,11 @@ export default function AdminCaja() {
 
   const closeMutation = useMutation({
     mutationFn: () => closeCaja(Number(closingAmount)),
-    onSuccess: () => {
+    onSuccess: (session: any) => {
       queryClient.invalidateQueries({ queryKey: ['currentCaja'] })
+      queryClient.invalidateQueries({ queryKey: ['dailySales'] })
       setCloseModal(false)
+      setCloseSummary({ openingAmount: session.openingAmount, closingAmount: session.closingAmount })
       setClosingAmount('')
     }
   })
@@ -68,8 +71,13 @@ export default function AdminCaja() {
     onSuccess: (order) => { queryClient.invalidateQueries({ queryKey: ['orders'] }); queryClient.invalidateQueries({ queryKey: ['tables'] }); setPayModal(null); setPaidOrder(order) }
   })
 
-  const pendingPayment = orders.filter(o => o.status === 'SERVIDO')
-  const inProgress = orders.filter(o => ['PENDIENTE', 'EN_COCINA', 'LISTO'].includes(o.status))
+  const pendingPayment = orders.filter(o =>
+    o.status === 'SERVIDO' || (o.status === 'LISTO' && o.orderType !== 'PARA_AQUI')
+  )
+  const inProgress = orders.filter(o => ['PENDIENTE', 'EN_COCINA'].includes(o.status) || (o.status === 'LISTO' && o.orderType === 'PARA_AQUI'))
+  const paidOrders = orders.filter(o => ['PAGADO', 'ENTREGADO'].includes(o.status))
+  const totalRecaudado = paidOrders.reduce((sum, o) => sum + Number(o.total), 0)
+  const [reprintOrder, setReprintOrder] = useState<Order | null>(null)
 
   if (isLoading) return (
     <div className="flex items-center justify-center py-12">
@@ -96,7 +104,7 @@ export default function AdminCaja() {
             </span>
             <h3 className="font-heading font-semibold text-lg dark:text-dark-text">Caja Abierta</h3>
           </div>
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-5 text-sm">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 text-sm">
             <div className="bg-altipiqui-green-light dark:bg-green-900/20 rounded-xl p-4">
               <p className="text-gray-500 dark:text-dark-text-muted text-xs mb-1">Abrió</p>
               <p className="font-semibold dark:text-dark-text">{currentSession.user?.name}</p>
@@ -108,6 +116,10 @@ export default function AdminCaja() {
             <div className="bg-altipiqui-indigo-light dark:bg-altipiqui-indigo/10 rounded-xl p-4">
               <p className="text-gray-500 dark:text-dark-text-muted text-xs mb-1">Apertura</p>
               <p className="font-semibold dark:text-dark-text">{formatDateTime(currentSession.openedAt)}</p>
+            </div>
+            <div className="bg-altipiqui-green-light dark:bg-green-900/20 rounded-xl p-4">
+              <p className="text-gray-500 dark:text-dark-text-muted text-xs mb-1">Total recaudado</p>
+              <p className="font-bold text-lg text-altipiqui-green">{formatCurrency(totalRecaudado)}</p>
             </div>
           </div>
           <button
@@ -162,7 +174,9 @@ export default function AdminCaja() {
                       <CreditCard className="w-5 h-5 text-orange-600 dark:text-orange-400" />
                     </div>
                     <div>
-                      <p className="font-bold dark:text-dark-text">Mesa {order.table?.number}</p>
+                      <p className="font-bold dark:text-dark-text">
+                        {order.table?.number ? `Mesa ${order.table.number}` : order.orderType === 'DELIVERY' ? 'Delivery' : 'Para Llevar'}
+                      </p>
                       <p className="text-xs text-gray-500 dark:text-dark-text-muted">{order.items?.length} productos · {formatCurrency(order.total)}</p>
                     </div>
                   </div>
@@ -185,7 +199,9 @@ export default function AdminCaja() {
               {inProgress.map(order => (
                 <div key={order.id} className="bg-white dark:bg-dark-surface rounded-xl p-3 shadow-sm border border-border/50 dark:border-dark-border/50 text-sm flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium dark:text-dark-text">Mesa {order.table?.number}</span>
+                    <span className="font-medium dark:text-dark-text">
+                      {order.table?.number ? `Mesa ${order.table.number}` : order.orderType === 'DELIVERY' ? 'Delivery' : 'Para Llevar'}
+                    </span>
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                       order.status === 'PENDIENTE' ? 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300' :
                       order.status === 'EN_COCINA' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' :
@@ -198,6 +214,46 @@ export default function AdminCaja() {
               {inProgress.length === 0 && <p className="text-sm text-gray-400 dark:text-dark-text-muted text-center py-6">Sin pedidos activos</p>}
             </div>
           </div>
+        </div>
+      </div>
+
+      <div className="bg-white dark:bg-dark-surface rounded-2xl p-5 shadow-sm border border-border/50 dark:border-dark-border/50">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-heading font-semibold dark:text-dark-text">Pedidos Pagados</h3>
+          <span className="bg-altipiqui-green/10 text-altipiqui-green text-xs font-bold px-2.5 py-1 rounded-full">{paidOrders.length}</span>
+        </div>
+        <div className="space-y-2">
+          {paidOrders.slice(0, 20).map(order => (
+            <div key={order.id} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-dark-bg/50 border border-border/50 dark:border-dark-border/50 text-sm">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-8 h-8 rounded-lg bg-altipiqui-green-light dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
+                  <CheckCircle className="w-4 h-4 text-altipiqui-green" />
+                </div>
+                <div className="min-w-0">
+                  <p className="font-medium dark:text-dark-text truncate">
+                    {order.table?.number ? `Mesa ${order.table.number}` : order.orderType === 'DELIVERY' ? 'Delivery' : 'Para Llevar'}
+                  </p>
+                  <p className="text-xs text-gray-400 dark:text-dark-text-muted">{formatCurrency(order.total)} · {formatDateTime(order.updatedAt)}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  const url = getCustomerReceiptUrl(order.id)
+                  setReprintOrder(order)
+                  setPreviewUrl(url)
+                  setPreviewTitle(`Recibo #${order.id}`)
+                  setShowPreview(true)
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-altipiqui-indigo hover:bg-altipiqui-indigo/10 rounded-xl transition-colors flex-shrink-0"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                Reimprimir
+              </button>
+            </div>
+          ))}
+          {paidOrders.length === 0 && (
+            <p className="text-sm text-gray-400 dark:text-dark-text-muted text-center py-4">Sin pedidos pagados aún</p>
+          )}
         </div>
       </div>
 
@@ -270,7 +326,9 @@ export default function AdminCaja() {
           return (
             <div className="space-y-4">
               <div className="bg-altipiqui-green-light dark:bg-green-900/20 rounded-2xl p-5 text-center">
-                <p className="text-sm text-gray-500 dark:text-dark-text-muted">Mesa {payModal.table?.number}</p>
+                <p className="text-sm text-gray-500 dark:text-dark-text-muted">
+                  {payModal.table?.number ? `Mesa ${payModal.table.number}` : payModal.orderType === 'DELIVERY' ? 'Delivery' : 'Para Llevar'}
+                </p>
                 {hasUnserved ? (
                   <div className="mt-1">
                     <p className="text-sm text-gray-400 dark:text-dark-text-muted line-through">{formatCurrency(originalTotal)}</p>
@@ -350,7 +408,7 @@ export default function AdminCaja() {
               <p className="text-sm text-gray-500 dark:text-dark-text-muted mt-1">Orden #{paidOrder.id}</p>
               <button
                 onClick={async () => {
-                  const url = await getCustomerReceiptUrl(paidOrder.id)
+                  const url = getCustomerReceiptUrl(paidOrder.id)
                   setPreviewUrl(url)
                   setPreviewTitle('Recibo')
                   setShowPreview(true)
@@ -368,7 +426,38 @@ export default function AdminCaja() {
         </div>
       </Modal>
 
-      <TicketPreviewModal open={showPreview} url={previewUrl} title={previewTitle} onClose={() => { setShowPreview(false); URL.revokeObjectURL(previewUrl) }} />
+      <Modal open={!!closeSummary} onClose={() => setCloseSummary(null)} title="Caja Cerrada" size="sm">
+        {closeSummary && (
+          <div className="text-center space-y-4">
+            <div className="w-16 h-16 rounded-full bg-altipiqui-green-light dark:bg-green-900/30 flex items-center justify-center mx-auto">
+              <CheckCircle className="w-8 h-8 text-altipiqui-green" />
+            </div>
+            <p className="text-lg font-heading font-bold dark:text-dark-text">Caja cerrada exitosamente</p>
+            <div className="bg-altipiqui-cream dark:bg-dark-bg rounded-2xl p-4 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500 dark:text-dark-text-muted">Monto inicial</span>
+                <span className="font-bold dark:text-dark-text">{formatCurrency(closeSummary.openingAmount)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500 dark:text-dark-text-muted">Monto final</span>
+                <span className="font-bold text-altipiqui-red">{formatCurrency(closeSummary.closingAmount)}</span>
+              </div>
+              <div className="flex justify-between text-sm pt-2 border-t border-border/50 dark:border-dark-border/50">
+                <span className="text-gray-500 dark:text-dark-text-muted">Diferencia</span>
+                <span className={`font-bold ${closeSummary.closingAmount >= closeSummary.openingAmount ? 'text-altipiqui-green' : 'text-red-500'}`}>
+                  {formatCurrency(closeSummary.closingAmount - closeSummary.openingAmount)}
+                </span>
+              </div>
+            </div>
+            <button onClick={() => setCloseSummary(null)}
+              className="px-6 py-2.5 bg-altipiqui-red text-white rounded-xl hover:bg-altipiqui-red-dark transition-all duration-200 shadow-lg shadow-altipiqui-red/20 font-medium active:scale-[0.97]">
+              Aceptar
+            </button>
+          </div>
+        )}
+      </Modal>
+
+      <TicketPreviewModal open={showPreview} url={previewUrl} title={previewTitle} onClose={() => setShowPreview(false)} />
     </div>
   )
 }

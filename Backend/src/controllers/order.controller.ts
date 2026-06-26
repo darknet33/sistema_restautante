@@ -218,7 +218,7 @@ export async function updateOrderStatus(req: Request, res: Response) {
     const { id } = req.params
     const { status } = req.body
 
-    const validStatuses = ['PENDIENTE', 'EN_COCINA', 'LISTO', 'SERVIDO', 'PAGADO']
+    const validStatuses = ['PENDIENTE', 'EN_COCINA', 'LISTO', 'SERVIDO', 'PAGADO', 'ENTREGADO']
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ message: 'Estado inválido' })
     }

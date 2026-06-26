@@ -1,15 +1,14 @@
 import { useState } from 'react'
 import { Check, CheckCircle, CreditCard, Printer, PlusCircle, Tag } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getOrders, updateOrderStatus } from '../../services/order.service'
+import { getOrders, updateOrderStatus, getCustomerReceiptUrl } from '../../services/order.service'
 import { getTables } from '../../services/table.service'
 import { getCurrentCaja, openCaja, closeCaja } from '../../services/caja.service'
 import { useOrderCreated, useOrderStatusChanged, useSocket } from '../../hooks/useSocket'
-import { formatCurrency } from '../../utils/format'
+import { formatCurrency, formatDateTime } from '../../utils/format'
 import Modal from '../../components/Modal'
 import TableCanvas from '../../components/TableCanvas'
 import TicketPreviewModal from '../../components/TicketPreviewModal'
-import { getCustomerReceiptUrl } from '../../services/order.service'
 import type { Order } from '../../types'
 
 export default function CajeroDashboard() {
@@ -22,6 +21,7 @@ export default function CajeroDashboard() {
   const [showPreview, setShowPreview] = useState(false)
   const [openingAmount, setOpeningAmount] = useState('')
   const [closingAmount, setClosingAmount] = useState('')
+  const [closeSummary, setCloseSummary] = useState<{ openingAmount: number; closingAmount: number } | null>(null)
   const queryClient = useQueryClient()
 
   useSocket('cajero')
@@ -47,13 +47,20 @@ export default function CajeroDashboard() {
 
   const closeCajaMutation = useMutation({
     mutationFn: () => closeCaja(Number(closingAmount)),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['currentCaja'] }); setCloseModal(false) }
+    onSuccess: (session: any) => {
+      queryClient.invalidateQueries({ queryKey: ['currentCaja'] })
+      queryClient.invalidateQueries({ queryKey: ['dailySales'] })
+      setCloseModal(false)
+      setCloseSummary({ openingAmount: session.openingAmount, closingAmount: session.closingAmount })
+    }
   })
 
   const pendingPayment = orders.filter(o =>
     o.status === 'SERVIDO' || (o.status === 'LISTO' && o.orderType !== 'PARA_AQUI')
   )
   const inProgress = orders.filter(o => ['PENDIENTE', 'EN_COCINA'].includes(o.status) || (o.status === 'LISTO' && o.orderType === 'PARA_AQUI'))
+  const paidOrders = orders.filter(o => ['PAGADO', 'ENTREGADO'].includes(o.status)).slice(0, 20)
+  const totalRecaudado = orders.filter(o => ['PAGADO', 'ENTREGADO'].includes(o.status)).reduce((sum, o) => sum + Number(o.total), 0)
 
   return (
     <div className="space-y-6">
@@ -63,14 +70,18 @@ export default function CajeroDashboard() {
           <p className="text-sm text-gray-500 dark:text-dark-text-muted">Cobros y estado de caja</p>
         </div>
         {currentSession ? (
-          <div className="flex items-center gap-3 text-sm bg-altipiqui-green-light dark:bg-green-900/20 rounded-xl px-4 py-2">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm bg-altipiqui-green-light dark:bg-green-900/20 rounded-xl px-4 py-2">
             <span className="relative flex w-2 h-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
             </span>
             <span className="text-altipiqui-green dark:text-green-400 font-medium">Caja abierta</span>
             <span className="text-gray-500 dark:text-dark-text-muted">|</span>
+            <span className="text-gray-500 dark:text-dark-text-muted text-xs">Inicial:</span>
             <span className="font-semibold dark:text-dark-text">{formatCurrency(currentSession.openingAmount)}</span>
+            <span className="text-gray-500 dark:text-dark-text-muted">|</span>
+            <span className="text-gray-500 dark:text-dark-text-muted text-xs">Recaudado:</span>
+            <span className="font-semibold text-altipiqui-green">{formatCurrency(totalRecaudado)}</span>
             <button onClick={() => setCloseModal(true)} className="px-3 py-1.5 bg-altipiqui-red/10 text-altipiqui-red rounded-xl hover:bg-altipiqui-red/20 text-xs font-medium transition-colors">Cerrar</button>
           </div>
         ) : (
@@ -144,6 +155,45 @@ export default function CajeroDashboard() {
               {inProgress.length === 0 && <p className="text-sm text-gray-400 dark:text-dark-text-muted text-center py-6">Sin pedidos activos</p>}
             </div>
           </div>
+        </div>
+      </div>
+
+      <div className="bg-white dark:bg-dark-surface rounded-2xl p-5 shadow-sm border border-border/50 dark:border-dark-border/50">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-heading font-semibold dark:text-dark-text">Pedidos Pagados</h3>
+          <span className="bg-altipiqui-green/10 text-altipiqui-green text-xs font-bold px-2.5 py-1 rounded-full">{paidOrders.length}</span>
+        </div>
+        <div className="space-y-2">
+          {paidOrders.map(order => (
+            <div key={order.id} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-dark-bg/50 border border-border/50 dark:border-dark-border/50 text-sm">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-8 h-8 rounded-lg bg-altipiqui-green-light dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
+                  <CheckCircle className="w-4 h-4 text-altipiqui-green" />
+                </div>
+                <div className="min-w-0">
+                  <p className="font-medium dark:text-dark-text truncate">
+                    {order.table?.number ? `Mesa ${order.table.number}` : order.orderType === 'DELIVERY' ? 'Delivery' : 'Para Llevar'}
+                  </p>
+                  <p className="text-xs text-gray-400 dark:text-dark-text-muted">{formatCurrency(order.total)} · {formatDateTime(order.updatedAt)}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  const url = getCustomerReceiptUrl(order.id)
+                  setPreviewUrl(url)
+                  setPreviewTitle(`Recibo #${order.id}`)
+                  setShowPreview(true)
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-altipiqui-indigo hover:bg-altipiqui-indigo/10 rounded-xl transition-colors flex-shrink-0"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                Reimprimir
+              </button>
+            </div>
+          ))}
+          {paidOrders.length === 0 && (
+            <p className="text-sm text-gray-400 dark:text-dark-text-muted text-center py-4">Sin pedidos pagados aún</p>
+          )}
         </div>
       </div>
 
@@ -242,7 +292,7 @@ export default function CajeroDashboard() {
               <p className="text-sm text-gray-500 dark:text-dark-text-muted mt-1">Orden #{paidOrder.id}</p>
               <button
                 onClick={async () => {
-                  const url = await getCustomerReceiptUrl(paidOrder.id)
+                  const url = getCustomerReceiptUrl(paidOrder.id)
                   setPreviewUrl(url)
                   setPreviewTitle('Recibo')
                   setShowPreview(true)
@@ -260,7 +310,38 @@ export default function CajeroDashboard() {
         </div>
       </Modal>
 
-      <TicketPreviewModal open={showPreview} url={previewUrl} title={previewTitle} onClose={() => { setShowPreview(false); URL.revokeObjectURL(previewUrl) }} />
+      <Modal open={!!closeSummary} onClose={() => setCloseSummary(null)} title="Caja Cerrada" size="sm">
+        {closeSummary && (
+          <div className="text-center space-y-4">
+            <div className="w-16 h-16 rounded-full bg-altipiqui-green-light dark:bg-green-900/30 flex items-center justify-center mx-auto">
+              <CheckCircle className="w-8 h-8 text-altipiqui-green" />
+            </div>
+            <p className="text-lg font-heading font-bold dark:text-dark-text">Caja cerrada exitosamente</p>
+            <div className="bg-altipiqui-cream dark:bg-dark-bg rounded-2xl p-4 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500 dark:text-dark-text-muted">Monto inicial</span>
+                <span className="font-bold dark:text-dark-text">{formatCurrency(closeSummary.openingAmount)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500 dark:text-dark-text-muted">Monto final</span>
+                <span className="font-bold text-altipiqui-red">{formatCurrency(closeSummary.closingAmount)}</span>
+              </div>
+              <div className="flex justify-between text-sm pt-2 border-t border-border/50 dark:border-dark-border/50">
+                <span className="text-gray-500 dark:text-dark-text-muted">Diferencia</span>
+                <span className={`font-bold ${closeSummary.closingAmount >= closeSummary.openingAmount ? 'text-altipiqui-green' : 'text-red-500'}`}>
+                  {formatCurrency(closeSummary.closingAmount - closeSummary.openingAmount)}
+                </span>
+              </div>
+            </div>
+            <button onClick={() => setCloseSummary(null)}
+              className="px-6 py-2.5 bg-altipiqui-red text-white rounded-xl hover:bg-altipiqui-red-dark transition-all duration-200 shadow-lg shadow-altipiqui-red/20 font-medium active:scale-[0.97]">
+              Aceptar
+            </button>
+          </div>
+        )}
+      </Modal>
+
+      <TicketPreviewModal open={showPreview} url={previewUrl} title={previewTitle} onClose={() => setShowPreview(false)} />
     </div>
   )
 }

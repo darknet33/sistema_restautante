@@ -32,12 +32,12 @@ export function serveOrderItem(orderId: number, itemId: number): Promise<any> {
   return api.patch(`/orders/${orderId}/items/${itemId}/serve`).then(r => r.data)
 }
 
-export async function getKitchenTicketUrl(orderId: number): Promise<string> {
-  const response = await api.get(`/orders/${orderId}/ticket`, { responseType: 'blob' })
-  return URL.createObjectURL(response.data)
+export function getKitchenTicketUrl(orderId: number): string {
+  const token = localStorage.getItem('token')
+  return `/api/orders/${orderId}/ticket?token=${token}`
 }
 
-export async function getCustomerReceiptUrl(orderId: number): Promise<string> {
-  const response = await api.get(`/orders/${orderId}/receipt`, { responseType: 'blob' })
-  return URL.createObjectURL(response.data)
+export function getCustomerReceiptUrl(orderId: number): string {
+  const token = localStorage.getItem('token')
+  return `/api/orders/${orderId}/receipt?token=${token}`
 }

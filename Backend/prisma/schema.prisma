@@ -27,6 +27,7 @@ enum OrderStatus {
   LISTO
   SERVIDO
   PAGADO
+  ENTREGADO
 }
 
 enum OrderType {

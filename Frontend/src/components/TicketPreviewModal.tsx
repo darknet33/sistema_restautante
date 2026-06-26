@@ -1,6 +1,6 @@
 import { useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { Printer, X } from 'lucide-react'
+import { Printer, X, ExternalLink } from 'lucide-react'
 
 interface TicketPreviewModalProps {
   open: boolean
@@ -10,7 +10,7 @@ interface TicketPreviewModalProps {
 }
 
 export default function TicketPreviewModal({ open, url, title, onClose }: TicketPreviewModalProps) {
-  const iframeRef = useRef<HTMLIFrameElement>(null)
+  const embedRef = useRef<HTMLEmbedElement>(null)
 
   useEffect(() => {
     if (open) {
@@ -24,9 +24,13 @@ export default function TicketPreviewModal({ open, url, title, onClose }: Ticket
   if (!open) return null
 
   const handlePrint = () => {
-    if (iframeRef.current?.contentWindow) {
-      iframeRef.current.contentWindow.print()
+    if (embedRef.current) {
+      try { embedRef.current.focus(); (embedRef.current as any).execCommand?.('print') } catch {}
     }
+  }
+
+  const handleOpenNewTab = () => {
+    window.open(url, '_blank')
   }
 
   return createPortal(
@@ -36,6 +40,13 @@ export default function TicketPreviewModal({ open, url, title, onClose }: Ticket
         <div className="flex items-center justify-between p-5 border-b border-border/50 dark:border-dark-border/50">
           <h2 className="text-lg font-heading font-bold dark:text-dark-text">{title}</h2>
           <div className="flex items-center gap-2">
+            <button
+              onClick={handleOpenNewTab}
+              className="flex items-center gap-1.5 px-4 py-2 bg-altipiqui-indigo text-white rounded-xl hover:bg-altipiqui-indigo-dark transition-all duration-200 text-sm font-medium active:scale-[0.97]"
+            >
+              <ExternalLink className="w-4 h-4" />
+              Abrir
+            </button>
             <button
               onClick={handlePrint}
               className="flex items-center gap-1.5 px-4 py-2 bg-altipiqui-red text-white rounded-xl hover:bg-altipiqui-red-dark transition-all duration-200 text-sm font-medium active:scale-[0.97]"
@@ -49,7 +60,7 @@ export default function TicketPreviewModal({ open, url, title, onClose }: Ticket
           </div>
         </div>
         <div className="flex-1 p-5 min-h-0">
-          <iframe ref={iframeRef} src={url} className="w-full h-[70vh] rounded-xl border border-border/50 dark:border-dark-border/50" title={title} />
+          <embed ref={embedRef} src={url} type="application/pdf" className="w-full h-[70vh] rounded-xl border border-border/50 dark:border-dark-border/50" />
         </div>
       </div>
     </div>,

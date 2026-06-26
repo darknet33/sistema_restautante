@@ -3,7 +3,7 @@ import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, Wallet, UtensilsCrossed, Package, Trash2,
   NotebookText, Users, ChartColumn, CirclePlus, Wine, ChefHat,
-  Sun, Moon, LogOut, Menu,
+  Sun, Moon, LogOut, Menu, Table2,
 } from 'lucide-react'
 import type { User } from '../types'
 
@@ -17,6 +17,7 @@ const roleMenus: Record<string, NavItem[]> = {
   ADMIN: [
     { to: '/admin/dashboard', label: 'Dashboard', icon: 'LayoutDashboard' },
     { to: '/admin/caja', label: 'Caja', icon: 'Wallet' },
+    { to: '/admin/mesas', label: 'Mesas', icon: 'Table2' },
     { to: '/admin/platos', label: 'Platos', icon: 'UtensilsCrossed' },
     { to: '/admin/consumibles', label: 'Inventario', icon: 'Package' },
     { to: '/admin/perdidos', label: 'Perdidos', icon: 'Trash2' },
@@ -24,6 +25,7 @@ const roleMenus: Record<string, NavItem[]> = {
     { to: '/admin/usuarios', label: 'Usuarios', icon: 'Users' },
     { to: '/admin/reportes', label: 'Reportes', icon: 'ChartColumn' },
     { to: '/admin/nuevo-pedido', label: 'Nuevo Pedido', icon: 'CirclePlus' },
+    { to: '/admin/atender-consumibles', label: 'Atender Consumibles', icon: 'Wine' },
   ],
   CAJERO: [
     { to: '/cajero', label: 'Dashboard', icon: 'LayoutDashboard' },
@@ -40,7 +42,7 @@ const roleMenus: Record<string, NavItem[]> = {
 
 const iconComponents: Record<string, React.ComponentType<{ className?: string }>> = {
   LayoutDashboard, Wallet, UtensilsCrossed, Package, Trash2,
-  NotebookText, Users, ChartColumn, CirclePlus, Wine, ChefHat,
+  NotebookText, Users, ChartColumn, CirclePlus, Wine, ChefHat, Table2,
 }
 
 function Icon({ name, className }: { name: string; className?: string }) {

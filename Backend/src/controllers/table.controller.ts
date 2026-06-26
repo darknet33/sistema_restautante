@@ -92,6 +92,26 @@ export async function updateTable(req: Request, res: Response) {
   }
 }
 
+export async function removeTable(req: Request, res: Response) {
+  try {
+    const id = Number(req.params.id)
+
+    const activeOrders = await prisma.order.count({
+      where: { tableId: id, status: { not: 'PAGADO' } }
+    })
+    if (activeOrders > 0) {
+      return res.status(409).json({ message: 'No se puede eliminar una mesa con pedidos activos' })
+    }
+
+    await prisma.table.delete({ where: { id } })
+    return res.status(204).send()
+  } catch (error: any) {
+    if (error.code === 'P2025') return res.status(404).json({ message: 'Mesa no encontrada' })
+    console.error('Delete table error:', error)
+    return res.status(500).json({ message: 'Error interno del servidor' })
+  }
+}
+
 export async function saveLayout(req: Request, res: Response) {
   try {
     const { tables } = req.body

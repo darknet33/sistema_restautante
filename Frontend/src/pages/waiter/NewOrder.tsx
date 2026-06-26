@@ -458,7 +458,7 @@ export default function NewOrder() {
         </div>
       </Modal>
 
-      <TicketPreviewModal open={showPreview} url={previewUrl} title={previewTitle} onClose={() => { setShowPreview(false); URL.revokeObjectURL(previewUrl) }} />
+      <TicketPreviewModal open={showPreview} url={previewUrl} title={previewTitle} onClose={() => setShowPreview(false)} />
     </div>
   )
 }

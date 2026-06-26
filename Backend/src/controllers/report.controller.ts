@@ -91,6 +91,13 @@ export async function closeTurno(req: Request, res: Response) {
   try {
     const { start, end } = getBoliviaDayRange()
 
+    const existing = await prisma.turnoClosure.findFirst({
+      where: { openedAt: start }
+    })
+    if (existing) {
+      return res.status(400).json({ message: 'El turno de hoy ya fue cerrado' })
+    }
+
     const orders = await prisma.order.findMany({
       where: {
         status: 'PAGADO',
@@ -111,7 +118,19 @@ export async function closeTurno(req: Request, res: Response) {
       }
     })
 
-    return res.status(201).json(closure)
+    let closedCaja = null
+    const openCaja = await prisma.cajaSession.findFirst({ where: { status: 'ABIERTA' } })
+    if (openCaja) {
+      closedCaja = await prisma.cajaSession.update({
+        where: { id: openCaja.id },
+        data: { closingAmount: totalSales, closedAt: new Date(), status: 'CERRADA' },
+        include: { user: { select: { id: true, name: true, username: true } } }
+      })
+      const { emitCajaClosed } = await import('../socket/emitter')
+      emitCajaClosed(closedCaja)
+    }
+
+    return res.status(201).json({ closure, closedCaja })
   } catch (error) {
     console.error('Close turno error:', error)
     return res.status(500).json({ message: 'Error interno del servidor' })

@@ -59,24 +59,34 @@ export default function TableCanvas({ tables, onTableClick, editable, onSaveLayo
     return { posX: table.posX, posY: table.posY }
   }
 
-  const handleMouseDown = useCallback((e: React.MouseEvent, table: Table) => {
+  const getClientPos = (e: React.MouseEvent | React.TouchEvent) => {
+    if ('touches' in e) {
+      return { x: e.touches[0].clientX, y: e.touches[0].clientY }
+    }
+    return { x: e.clientX, y: e.clientY }
+  }
+
+  const handleDragStart = useCallback((e: React.MouseEvent | React.TouchEvent, table: Table) => {
     if (!editable) return
     e.preventDefault()
+    const pos = getClientPos(e)
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-    offsetRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top }
+    offsetRef.current = { x: pos.x - rect.left, y: pos.y - rect.top }
     setDragId(table.id)
   }, [editable])
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+  const handleDragMove = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     if (dragId === null || !canvasRef.current) return
+    e.preventDefault()
+    const pos = getClientPos(e)
     const canvasRect = canvasRef.current.getBoundingClientRect()
-    const x = Math.max(0, (e.clientX - canvasRect.left - offsetRef.current.x) / scale)
-    const y = Math.max(0, (e.clientY - canvasRect.top - offsetRef.current.y) / scale)
+    const x = Math.max(0, (pos.x - canvasRect.left - offsetRef.current.x) / scale)
+    const y = Math.max(0, (pos.y - canvasRect.top - offsetRef.current.y) / scale)
     dragPositions.current.set(dragId, { posX: Math.round(x), posY: Math.round(y) })
     setTick(t => t + 1)
   }, [dragId, scale])
 
-  const handleMouseUp = useCallback(() => {
+  const handleDragEnd = useCallback(() => {
     setDragId(null)
   }, [])
 
@@ -124,9 +134,11 @@ export default function TableCanvas({ tables, onTableClick, editable, onSaveLayo
         ref={canvasRef}
         className="relative bg-white dark:bg-dark-surface rounded-2xl border-2 border-dashed border-border dark:border-dark-border overflow-hidden"
         style={{ minHeight: 400, height: '60vh' }}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
+        onMouseMove={handleDragMove}
+        onMouseUp={handleDragEnd}
+        onMouseLeave={handleDragEnd}
+        onTouchMove={handleDragMove}
+        onTouchEnd={handleDragEnd}
       >
         <div
           style={{
@@ -144,9 +156,10 @@ export default function TableCanvas({ tables, onTableClick, editable, onSaveLayo
               <div
                 key={table.id}
                 onClick={() => !editable && onTableClick?.(table)}
-                onMouseDown={(e) => handleMouseDown(e, table)}
+                onMouseDown={(e) => handleDragStart(e, table)}
+                onTouchStart={(e) => handleDragStart(e, table)}
                 className={`
-                  absolute flex items-center justify-center cursor-pointer select-none
+                  absolute flex items-center justify-center cursor-pointer select-none touch-none
                   transition-all duration-150
                   ${editable ? 'cursor-grab active:cursor-grabbing' : 'hover:scale-105'}
                   ${statusColors[table.status] || 'bg-gradient-to-br from-gray-400 to-gray-500'}
