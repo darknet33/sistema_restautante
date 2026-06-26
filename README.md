@@ -1,111 +1,107 @@
-# Sistema de Gestión para Restaurante - MVP
+# Sistema de Gestión para Restaurante
 
-## Estructura del Proyecto
-```
-Proyecto_Restaurant/
-├── Backend/           # API REST (Node.js + Express + Prisma + MySQL)
-│   ├── src/
-│   │   ├── controllers/  # Lógica de endpoints
-│   │   ├── routes/      # Definición de rutas
-│   │   ├── middleware/   # Auth JWT + roles
-│   │   ├── services/    # Lógica de impresión
-│   │   ├── socket/      # WebSockets (tiempo real)
-│   │   └── utils/       # Prisma client
-│   ├── prisma/
-│   │   └── schema.prisma  # Esquema BD
-│   └── .env             # Variables entorno
-│
-└── Frontend/          # Interfaz Web (React + Vite + Tailwind)
-    ├── src/
-    │   ├── pages/      # Login, Caja, Cocina, Mesero, Admin
-    │   ├── services/   # API calls
-    │   ├── socket/     # WebSocket client
-    │   ├── types/      # TypeScript interfaces
-    │   └── App.tsx     # Routing
-    └── dist/            # Build producción
-```
+## Stack
+- **Backend:** Node.js + Express 5 + Prisma + MySQL + Socket.IO + pdfmake
+- **Frontend:** React 19 + TypeScript + Vite + Tailwind CSS 4 + TanStack Query + Socket.IO Client
+- **Moneda:** Bs. (Bolivianos) — formato `Bs. 120.00`
+- **Zona horaria:** Bolivia UTC-4 — fechas UTC convertidas en frontend con `toLocaleString('es-BO', { timeZone: 'America/La_Paz' })`
 
-## Requisitos Previos
-- Node.js 18+
-- MySQL 8+ corriendo localmente
-- Base de datos `restaurante_db` creada
-- Puerto 3000 (Backend) y 5173 (Frontend) libres
+## Estructura
+```
+Backend/          # API REST (src/, prisma/, .env)
+Frontend/         # React SPA (src/, vite.config.ts)
+```
+- Backend `app.ts` sirve `Frontend/dist/` en producción
+- Frontend `vite.config.ts` proxy: `/api`, `/uploads`, `/socket.io` → `http://localhost:3000`
+- Frontend usa `@/` alias → `src/`
 
 ## Instalación Rápida
 
-### 1. Backend
-```powershell
-cd D:\Proyectos\Locales\Proyecto_Restaurant\Backend
+### Backend (puerto 3000)
+```bash
+cd Backend
 npm install
 npx prisma generate
 npx prisma db push
-npx ts-node-dev --respawn --transpile-only prisma/seed.ts
-npm run dev  # Inicia en puerto 3000
+npm run prisma:seed
+npm run dev
 ```
 
-### 2. Frontend
-```powershell
-cd D:\Proyectos\Locales\Proyecto_Restaurant\Frontend
+### Frontend (puerto 5173)
+```bash
+cd Frontend
 npm install
-npm run dev  # Inicia en puerto 5173
+npm run dev
 ```
 
 ## Usuarios de Prueba
-| Rol | Email | Contraseña |
-|-----|-------|------------|
-| Admin | admin@restaurante.com | admin123 |
-| Cajero | cajero@restaurante.com | cajero123 |
-| Mesero | mesero@restaurante.com | mesero123 |
+| Rol | Usuario | Contraseña |
+|-----|---------|------------|
+| Admin | admin | admin123 |
+| Cajero | cajero | cajero123 |
+| Mesero | mesero | mesero123 |
+| Cocina | cocina | cocina123 |
 
-## Flujo de Uso
+> Login con **username** (no email).
 
-### 1. Caja (Admin/Cajero)
-1. Login con credenciales
-2. Selecciona mesa (7 mesas disponibles)
-3. Agrega productos/bebidas al pedido
-4. Click "Crear Pedido y Enviar a Cocina"
-5. Pedido se envía automáticamente a cocina
-6. Al hacer click en "Pagar", la mesa se libera automáticamente
+## Flujo Kanban (OrderStatus)
+```
+PENDIENTE → EN_COCINA → LISTO → SERVIDO → PAGADO → ENTREGADO
+```
 
-### 2. Cocina
-1. Login con cualquier usuario + ve a `/cocina`
-2. Ve pedidos pendientes en tiempo real (<1 seg)
-3. Click "Marcar Listo" → notifica a meseros
+### Por tipo de pedido
+| Tipo | Flujo |
+|---|---|
+| **PARA_AQUI** (mesa) | PENDIENTE → EN_COCINA → LISTO → SERVIDO → PAGADO |
+| **PARA_LLEVAR** | PENDIENTE → EN_COCINA → LISTO → PAGADO (cajero/admin) → ENTREGADO (mesero) |
+| **DELIVERY** | PENDIENTE → EN_COCINA → LISTO → PAGADO (cajero/admin) → ENTREGADO (mesero) |
 
-### 3. Mesero
-1. Login → vista de mesas y pedidos activos
-2. Ve estado de mesas y pedidos en tiempo real
+- **COCINA:** PENDIENTE → EN_COCINA → LISTO
+- **MESERO:** LISTO → SERVIDO (solo PARA_AQUI) / PAGADO → ENTREGADO (PARA_LLEVAR/DELIVERY)
+- **CAJERO/ADMIN:** SERVIDO → PAGADO / LISTO → PAGADO (no dine-in)
 
-### 4. Admin
-1. Login → panel de administración
-2. **Ventas del día** - total, tickets, promedio
-3. **Alertas de stock** - bebidas con stock bajo
-4. **Platos más vendidos** - filtro por platos/bebidas
-5. **Gestión de Productos** - botón "Nuevo Producto" / editar / eliminar
-6. **Cerrar Turno** - resumen de ventas
+## Roles y Rutas
+| Rol | Rutas principales |
+|---|---|
+| **ADMIN** | `/admin/dashboard`, `/admin/caja`, `/admin/mesas`, `/admin/platos`, `/admin/consumibles`, `/admin/atender-consumibles`, `/admin/perdidos`, `/admin/menu`, `/admin/usuarios`, `/admin/reportes`, `/admin/nuevo-pedido` |
+| **CAJERO** | `/cajero` |
+| **MESERO** | `/mesero/dashboard`, `/mesero/nuevo-pedido`, `/mesero/consumibles` |
+| **COCINA** | `/cocina` |
 
-## Características Implementadas
+## Características
 
-### Backend ✅
+### Backend
 - JWT Auth con roles (ADMIN, CAJERO, MESERO, COCINA)
-- CRUD completo de productos/insumos
-- Gestión de mesas (7) con estados visuales
-- Máquina de estados: PENDIENTE → EN_COCINA → LISTO → SERVIDO → PAGADO
-- Descuento automático de stock (solo bebidas/insumos)
-- Movimientos de inventario con auditoría
-- WebSockets (Socket.io) para tiempo real
-- Impresión ESC/POS (preparado para IPs locales)
-- Reportes: ventas, platos top, cierre turno
+- CRUD completo: platos, consumibles, mesas, usuarios, categorías
+- Gestión de mesas con layout visual (posX, posY, shape, width, height)
+- Máquina de estados con 6 estados (PENDIENTE → ENTREGADO)
+- Consumibles (supply items) bypassan cocina, se descuentan al servir
+- Descuento automático de stock con movimientos tipo MERMA
+- WebSockets (Socket.IO) para tiempo real con rooms por rol
+- Impresión de tickets (ESC/POS, preparado para IPs locales)
+- Reportes: ventas diarias, platos top, cierre turno, kardex
+- Caja: apertura/cierre con montos, historial de sesiones
+- Descarga de tickets/recibos en PDF via auth por query param
 
-### Frontend ✅
-- React + TypeScript + Vite
-- Tailwind CSS (interfaz táctil optimizada)
-- TanStack Query (React Query) para caching
+### Frontend
+- React 19 + TypeScript + Vite (HMR rápido)
+- Tailwind CSS 4 vía `@tailwindcss/vite` plugin (sin tailwind.config.js)
+- TanStack Query (React Query) para caching e invalidación
 - React Router con redirección por roles
-- Socket.io client para actualizaciones <1 seg
-- Login con persistencia JWT
-- Vistas: Caja, Cocina, Mesero, Admin
-- CRUD productos con diferenciación platos/bebidas/insumos
+- Socket.IO client para actualizaciones en tiempo real
+- Login con persistencia JWT (localStorage)
+- Vistas: Caja, Cocina, Mesero, Admin con paneles específicos
+- KanbanBoard para cocina y mesero (drag-free, botones)
+- TableCanvas interactivo con arrastrar mesas + soporte táctil
+- TicketPreviewModal con visor PDF embebido y apertura en nueva pestaña
+- CRUD completo: platos, consumibles, mesas, usuarios, menú
+- Reportes con gráficos y resumen de cierre de turno
+- Consumibles: vista de atención por mesa con filtro pendientes/atendidos
+
+## WebSockets
+- **Auth:** JWT en `socket.handshake.auth.token`
+- **Rooms:** clientes se unen a `kitchen`, `waiter`, `admin`, `cajero` según rol
+- **Eventos:** `order_created`, `order_status_changed`, `caja_opened`, `caja_closed`, `stock_low`, `menu_updated`, `table_layout_updated`
 
 ## Configuración de Impresoras
 Editar `Backend/.env`:
@@ -113,25 +109,16 @@ Editar `Backend/.env`:
 PRINTER_KITCHEN_IP=192.168.1.100
 PRINTER_CASHIER_IP=192.168.1.101
 ```
-Las impresoras deben estar configuradas con IP fija en la red local.
 
-## Próximos Pasos (Semana 3)
-1. **PWA** - Manifest + Service Worker para modo offline
-2. **Docker + PM2** - Despliegue producción local
-3. **Testing** - Pruebas de carga (5 usuarios concurrentes)
-4. **Documentación** - Manual de usuario para capacitación
-5. **Impresión real** - Configurar con impresoras Epson TM-T20III
+## Comandos Útiles
 
-## Criterios de Aceptación (MVP)
-✅ CRUD productos/insumos con auditoría
-✅ Pedidos para 7 mesas con validación stock bebidas
-✅ Ticket cocina + ficha mesero en <3 segundos
-✅ Vista cocina tiempo real (<1s latencia)
-✅ Dashboard: ventas, platos top, alertas stock
-✅ Cierre mesa libera estado + resumen
-✅ Sistema opera estable en red local
+### Backend
+```bash
+npm run build        # tsc → dist/
+npm run prisma:seed  # ts-node-dev prisma/seed.ts
+```
 
-## Soporte
-Para dudas o problemas, revisar:
-- Backend: `Backend/README.md`
-- Frontend: `Frontend/README.md`
+### Frontend
+```bash
+npm run build        # tsc && vite build
+```
