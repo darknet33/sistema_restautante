@@ -37,7 +37,7 @@ npm run build             # tsc && vite build
 ```
 
 ### Seed data
-- Login con **username** (NO email): admin/admin123, cajero/cajero123, mesero/mesero123, cocina/cocina123
+- Login con **username** (NO email): admin/*, cajero/*, mesero/*, cocina/* (contraseñas generadas aleatoriamente al ejecutar seed, o fijas via SEED_*_PASSWORD env vars)
 - 3 categorías (Platos Fuertes, Bebidas, Insumos), 3 platos, 5 consumibles, 7 mesas LIBRE
 
 ## Login & Auth

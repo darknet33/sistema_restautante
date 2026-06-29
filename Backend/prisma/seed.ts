@@ -9,10 +9,15 @@ async function main() {
   console.log('Starting seed...')
 
   // Users (login con username)
-  const adminPassword = await bcrypt.hash('admin123', 10)
-  const cajeroPassword = await bcrypt.hash('cajero123', 10)
-  const meseroPassword = await bcrypt.hash('mesero123', 10)
-  const cocinaPassword = await bcrypt.hash('cocina123', 10)
+  const randPass = () => Math.random().toString(36).slice(-8)
+  const adminPass = process.env.SEED_ADMIN_PASSWORD || randPass()
+  const cajeroPass = process.env.SEED_CAJERO_PASSWORD || randPass()
+  const meseroPass = process.env.SEED_MESERO_PASSWORD || randPass()
+  const cocinaPass = process.env.SEED_COCINA_PASSWORD || randPass()
+  const adminPassword = await bcrypt.hash(adminPass, 10)
+  const cajeroPassword = await bcrypt.hash(cajeroPass, 10)
+  const meseroPassword = await bcrypt.hash(meseroPass, 10)
+  const cocinaPassword = await bcrypt.hash(cocinaPass, 10)
 
   await prisma.user.upsert({
     where: { username: 'admin' },
@@ -133,6 +138,22 @@ async function main() {
   }
 
   console.log('Seed completed successfully!')
+  console.log('')
+  console.log('─'.repeat(40))
+  console.log('  CREDENCIALES DE ACCESO')
+  console.log('─'.repeat(40))
+  const showPass = !process.env.SEED_ADMIN_PASSWORD
+  if (showPass) {
+    console.log(`  Admin:  admin / ${adminPass}`)
+    console.log(`  Cajero: cajero / ${cajeroPass}`)
+    console.log(`  Mesero: mesero / ${meseroPass}`)
+    console.log(`  Cocina: cocina / ${cocinaPass}`)
+    console.log('')
+    console.log('  Para usar contraseñas fijas, definir las variables:')
+    console.log('  SEED_ADMIN_PASSWORD, SEED_CAJERO_PASSWORD,')
+    console.log('  SEED_MESERO_PASSWORD, SEED_COCINA_PASSWORD')
+  }
+  console.log('─'.repeat(40))
 }
 
 main()

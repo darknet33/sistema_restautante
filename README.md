@@ -37,10 +37,10 @@ npm run dev
 ## Usuarios de Prueba
 | Rol | Usuario | Contraseña |
 |-----|---------|------------|
-| Admin | admin | admin123 |
-| Cajero | cajero | cajero123 |
-| Mesero | mesero | mesero123 |
-| Cocina | cocina | cocina123 |
+| Admin | admin | (aleatoria, ver consola al ejecutar seed) |
+| Cajero | cajero | (aleatoria) |
+| Mesero | mesero | (aleatoria) |
+| Cocina | cocina | (aleatoria) |
 
 > Login con **username** (no email).
 

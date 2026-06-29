@@ -33,10 +33,10 @@ src/
 - `/socket.io` → `http://localhost:3000` (WebSocket)
 
 ## Usuarios de prueba
-- **Admin:** admin / admin123
-- **Cajero:** cajero / cajero123
-- **Mesero:** mesero / mesero123
-- **Cocina:** cocina / cocina123
+- **Admin:** admin / (contraseña aleatoria al ejecutar seed)
+- **Cajero:** cajero / (contraseña aleatoria al ejecutar seed)
+- **Mesero:** mesero / (contraseña aleatoria al ejecutar seed)
+- **Cocina:** cocina / (contraseña aleatoria al ejecutar seed)
 
 > Login con **username**, no email.
 
