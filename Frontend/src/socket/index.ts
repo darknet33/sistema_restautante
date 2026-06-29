@@ -9,7 +9,8 @@ class SocketService {
   connect(token: string) {
     if (this.socket?.connected) return
 
-    this.socket = io({
+    const SOCKET_URL = import.meta.env.VITE_API_URL || ''
+    this.socket = io(SOCKET_URL, {
       auth: { token },
       autoConnect: true,
       reconnection: true,

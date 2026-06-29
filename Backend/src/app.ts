@@ -30,9 +30,6 @@ app.use(cors({
 app.use(express.json())
 app.use('/uploads', express.static(path.resolve(__dirname, '../uploads')))
 
-const frontendDist = path.resolve(__dirname, '../../Frontend/dist')
-app.use(express.static(frontendDist))
-
 app.use('/api/auth', authRoutes)
 app.use('/api/dishes', dishRoutes)
 app.use('/api/supplies', supplyRoutes)
@@ -46,10 +43,6 @@ app.use('/api/reports', reportRoutes)
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
-})
-
-app.get('/{*path}', (req, res) => {
-  res.sendFile(path.resolve(frontendDist, 'index.html'))
 })
 
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
