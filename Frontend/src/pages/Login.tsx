@@ -103,29 +103,6 @@ export default function Login({ onLogin }: LoginProps) {
               ) : 'Iniciar Sesión'}
             </button>
           </form>
-
-          {/* Test credentials */}
-          <div className="mt-6 pt-4 border-t border-gray-200">
-            <p className="text-xs text-gray-400 text-center mb-2">Credenciales de prueba:</p>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="bg-altipiqui-cream rounded-xl p-2 text-center">
-                <strong className="text-altipiqui-red">admin</strong>
-                <span className="text-gray-500"> / admin123</span>
-              </div>
-              <div className="bg-altipiqui-indigo-light rounded-xl p-2 text-center">
-                <strong className="text-altipiqui-indigo">cajero</strong>
-                <span className="text-gray-500"> / cajero123</span>
-              </div>
-              <div className="bg-altipiqui-green-light rounded-xl p-2 text-center">
-                <strong className="text-altipiqui-green">mesero</strong>
-                <span className="text-gray-500"> / mesero123</span>
-              </div>
-              <div className="bg-altipiqui-gold-light rounded-xl p-2 text-center">
-                <strong className="text-amber-800">cocina</strong>
-                <span className="text-gray-500"> / cocina123</span>
-              </div>
-            </div>
-          </div>
         </div>
 
         <p className="text-center text-white/50 text-xs mt-6">
