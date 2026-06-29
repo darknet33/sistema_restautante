@@ -2,6 +2,8 @@ import express from 'express'
 import cors from 'cors'
 import path from 'path'
 import dotenv from 'dotenv'
+import swaggerUi from 'swagger-ui-express'
+import { swaggerSpec } from './config/swagger'
 import authRoutes from './routes/auth.routes'
 import dishRoutes from './routes/dish.routes'
 import supplyRoutes from './routes/supply.routes'
@@ -29,6 +31,10 @@ app.use(cors({
 }))
 app.use(express.json())
 app.use('/uploads', express.static(path.resolve(__dirname, '../uploads')))
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'ALTIPIQUI — API Docs',
+}))
 
 app.use('/api/auth', authRoutes)
 app.use('/api/dishes', dishRoutes)
