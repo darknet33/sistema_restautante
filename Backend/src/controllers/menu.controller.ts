@@ -19,7 +19,7 @@ export async function getMenu(req: Request, res: Response) {
 export async function generateQR(req: Request, res: Response) {
   try {
     const frontendUrl = process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`
-    const menuUrl = `${frontendUrl}/menu`
+    const menuUrl = `${frontendUrl}/#/menu`
 
     const qrDataUrl = await QRCode.toDataURL(menuUrl, {
       width: 400,
