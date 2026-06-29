@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getDishes, updateDish } from '../../services/dish.service'
 import { useState } from 'react'
 import { getMenu, generateQR } from '../../services/menu.service'
-import { formatCurrency } from '../../utils/format'
+import { formatCurrency, uploadUrl } from '../../utils/format'
 import Modal from '../../components/Modal'
 import { Layout, Info, Image, Sparkles, Download } from 'lucide-react'
 
@@ -58,7 +58,7 @@ export default function AdminMenu() {
             <div key={dish.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-altipiqui-cream/50 dark:hover:bg-dark-bg/50 border border-border/50 dark:border-dark-border/50 transition-colors">
               <div className="flex items-center gap-3 min-w-0 flex-1">
                 {dish.imageUrl ? (
-                  <img src={dish.imageUrl} alt="" className="w-12 h-12 rounded-xl object-cover flex-shrink-0" />
+                  <img src={uploadUrl(dish.imageUrl)} alt="" className="w-12 h-12 rounded-xl object-cover flex-shrink-0" />
                 ) : (
                   <div className="w-12 h-12 rounded-xl bg-altipiqui-cream dark:bg-dark-bg flex items-center justify-center flex-shrink-0">
                     <Image className="w-5 h-5 text-gray-400" />
@@ -104,7 +104,7 @@ export default function AdminMenu() {
             {menuDishes.map(dish => (
               <div key={dish.id} className="rounded-xl border border-border/50 dark:border-dark-border/50 overflow-hidden">
                 {dish.imageUrl ? (
-                  <img src={dish.imageUrl} alt="" className="w-full h-24 object-cover" />
+                  <img src={uploadUrl(dish.imageUrl)} alt="" className="w-full h-24 object-cover" />
                 ) : (
                   <div className="w-full h-24 bg-altipiqui-cream dark:bg-dark-bg flex items-center justify-center">
                     <Image className="w-6 h-6 text-gray-300" />

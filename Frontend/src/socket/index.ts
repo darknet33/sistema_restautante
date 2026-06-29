@@ -12,6 +12,7 @@ class SocketService {
     const SOCKET_URL = import.meta.env.VITE_API_URL || ''
     this.socket = io(SOCKET_URL, {
       auth: { token },
+      transports: ['polling'],
       autoConnect: true,
       reconnection: true,
       reconnectionDelay: 1000,

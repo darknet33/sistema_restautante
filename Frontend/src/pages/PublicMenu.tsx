@@ -1,7 +1,7 @@
 import { Loader2, AlertCircle, Image } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { getMenu } from '../services/menu.service'
-import { formatCurrency } from '../utils/format'
+import { formatCurrency, uploadUrl } from '../utils/format'
 import type { Dish } from '../types'
 
 const categoryColors: Record<string, { bg: string; dot: string }> = {
@@ -95,7 +95,7 @@ export default function PublicMenu() {
                     <div className="relative h-40 sm:h-44 overflow-hidden bg-altipiqui-cream">
                       {dish.imageUrl ? (
                         <img
-                          src={dish.imageUrl}
+                          src={uploadUrl(dish.imageUrl)}
                           alt={dish.name}
                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                         />

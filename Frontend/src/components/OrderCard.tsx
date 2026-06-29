@@ -1,5 +1,5 @@
 import { Check, MessageSquare, UtensilsCrossed, ShoppingBag, Truck } from 'lucide-react'
-import { formatCurrency, formatTime } from '../utils/format'
+import { formatCurrency, formatTime, uploadUrl } from '../utils/format'
 import type { Order, OrderType } from '../types'
 
 interface OrderCardProps {
@@ -86,7 +86,7 @@ export default function OrderCard({ order, onStatusChange, allowedTransitions, s
         {filteredItems.slice(0, 4).map(item => (
           <div key={item.id} className="flex items-center gap-2 text-sm">
             {item.dish?.imageUrl && (
-              <img src={item.dish.imageUrl} alt="" className="w-7 h-7 rounded-lg object-cover flex-shrink-0" />
+              <img src={uploadUrl(item.dish.imageUrl)} alt="" className="w-7 h-7 rounded-lg object-cover flex-shrink-0" />
             )}
             {item.type === 'supply' && !item.served && (
               <span className="w-3.5 h-3.5 rounded-full border border-amber-400 flex items-center justify-center flex-shrink-0" title="No atendido">

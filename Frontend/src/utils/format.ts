@@ -1,5 +1,12 @@
 const TIMEZONE = 'America/La_Paz'
 const LOCALE = 'es-BO'
+const API_URL = import.meta.env.VITE_API_URL || ''
+
+export function uploadUrl(path: string | null | undefined): string {
+  if (!path) return ''
+  if (path.startsWith('http')) return path
+  return `${API_URL}${path}`
+}
 
 export function formatCurrency(value: number | string): string {
   const num = typeof value === 'string' ? parseFloat(value) : value

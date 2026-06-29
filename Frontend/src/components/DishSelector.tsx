@@ -1,5 +1,5 @@
 import { AlertCircle, Check } from 'lucide-react'
-import { formatCurrency } from '../utils/format'
+import { formatCurrency, uploadUrl } from '../utils/format'
 import type { Dish } from '../types'
 
 interface DishSelectorProps {
@@ -25,7 +25,7 @@ export default function DishSelector({ dishes, selectedIds, onToggle }: DishSele
           >
             {dish.imageUrl && (
               <div className="relative mb-2 overflow-hidden rounded-xl">
-                <img src={dish.imageUrl} alt="" className="w-full h-20 object-cover rounded-xl" />
+                <img src={uploadUrl(dish.imageUrl)} alt="" className="w-full h-20 object-cover rounded-xl" />
               </div>
             )}
             {!dish.imageUrl && (

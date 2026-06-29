@@ -4,7 +4,7 @@ import type { AxiosError } from 'axios'
 import { getDishes, createDish, updateDish, deleteDish } from '../../services/dish.service'
 import { getCategories } from '../../services/category.service'
 import CategoryManager from '../../components/CategoryManager'
-import { formatCurrency } from '../../utils/format'
+import { formatCurrency, uploadUrl } from '../../utils/format'
 import Modal from '../../components/Modal'
 import type { Dish } from '../../types'
 import { PlusCircle, Image, Pencil, Trash2, AlertCircle, Settings, X, Upload } from 'lucide-react'
@@ -96,7 +96,7 @@ export default function AdminPlatos() {
           <div key={dish.id} className="bg-white dark:bg-dark-surface rounded-2xl shadow-sm border border-border/50 dark:border-dark-border/50 overflow-hidden transition-all hover:shadow-md">
             {dish.imageUrl ? (
               <div className="relative h-40 overflow-hidden">
-                <img src={dish.imageUrl} alt="" className="w-full h-full object-cover" />
+                <img src={uploadUrl(dish.imageUrl)} alt="" className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
                 <span className={`absolute top-3 right-3 px-2.5 py-0.5 text-[11px] rounded-full font-medium ${dish.isAvailable ? 'bg-green-500 text-white' : 'bg-gray-500 text-white'}`}>
                   {dish.isAvailable ? 'Disponible' : 'No disponible'}
@@ -226,7 +226,7 @@ export default function AdminPlatos() {
               ) : editing?.imageUrl ? (
                 <div className="text-center w-full">
                   <div className="relative w-full h-40 mb-3 rounded-xl overflow-hidden bg-altipiqui-cream dark:bg-dark-bg">
-                    <img src={editing.imageUrl} alt="Current" className="w-full h-full object-contain" />
+                    <img src={uploadUrl(editing.imageUrl)} alt="Current" className="w-full h-full object-contain" />
                   </div>
                   <p className="text-xs text-gray-400 dark:text-dark-text-muted">Imagen actual. Haz clic o arrastra para cambiar</p>
                 </div>
