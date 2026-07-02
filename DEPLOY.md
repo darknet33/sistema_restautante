@@ -184,6 +184,28 @@ npm run build
 3. `api.altipiqui.com` > Node.js > **Ejecutar script > `build`** > **Restart**
 4. `app.altipiqui.com` > Node.js > **Ejecutar comandos > `npm run build`**
 
+## Funcionalidades implementadas
+
+### Método de pago (Efectivo / QR)
+
+Al cobrar un pedido, el cajero/admin debe seleccionar entre **Efectivo** o **QR** antes de confirmar el cobro. El método queda registrado en la orden y se muestra en el recibo.
+
+**Schema:** `Order.paymentMethod` (`EFECTIVO` por defecto, enum con `EFECTIVO | QR`)
+
+### Cierre de caja con desglose
+
+Al cerrar caja se ingresan dos montos:
+- **Efectivo en caja** — dinero físico contado
+- **QR cobrado** — total de pagos vía QR
+
+El sistema calcula el total automáticamente (`efectivo + QR`). El resumen de cierre muestra ambos montos y la diferencia contra el monto inicial.
+
+**Schema:** `CajaSession.cashAmount` y `CajaSession.qrAmount` (ambos `Decimal @default(0)`)
+
+### Recibo con método de pago
+
+Tanto el PDF como el ticket térmico ahora muestran la línea `Pagado con: Efectivo` o `Pagado con: QR` debajo del total.
+
 ## Problemas conocidos y soluciones
 
 ### Tickets/recibos no se abren en producción

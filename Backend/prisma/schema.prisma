@@ -36,6 +36,11 @@ enum OrderType {
   DELIVERY
 }
 
+enum PaymentMethod {
+  EFECTIVO
+  QR
+}
+
 enum MovementType {
   ENTRADA
   MERMA
@@ -123,12 +128,13 @@ model Table {
 }
 
 model Order {
-  id              Int         @id @default(autoincrement())
+  id              Int           @id @default(autoincrement())
   tableId         Int?
   userId          Int
-  orderType       OrderType   @default(PARA_AQUI)
-  status          OrderStatus @default(PENDIENTE)
-  total           Decimal     @db.Decimal(10, 2) @default(0)
+  orderType       OrderType     @default(PARA_AQUI)
+  status          OrderStatus   @default(PENDIENTE)
+  total           Decimal       @db.Decimal(10, 2) @default(0)
+  paymentMethod   PaymentMethod @default(EFECTIVO)
   notes           String?
   deliveryAddress String?
   deliveryPhone   String?
@@ -189,6 +195,8 @@ model CajaSession {
   userId        Int
   openingAmount Decimal  @db.Decimal(10, 2)
   closingAmount Decimal? @db.Decimal(10, 2)
+  cashAmount    Decimal  @db.Decimal(10, 2) @default(0)
+  qrAmount      Decimal  @db.Decimal(10, 2) @default(0)
   openedAt      DateTime @default(now())
   closedAt      DateTime?
   status        String   @default("ABIERTA")

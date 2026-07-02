@@ -9,8 +9,8 @@ export function openCaja(openingAmount: number): Promise<CajaSession> {
   return api.post('/caja/open', { openingAmount }).then(r => r.data)
 }
 
-export function closeCaja(closingAmount: number): Promise<CajaSession> {
-  return api.post('/caja/close', { closingAmount }).then(r => r.data)
+export function closeCaja(cashAmount: number, qrAmount: number): Promise<CajaSession> {
+  return api.post('/caja/close', { cashAmount, qrAmount }).then(r => r.data)
 }
 
 export function getCajaHistory(): Promise<CajaSession[]> {

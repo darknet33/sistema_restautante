@@ -216,11 +216,16 @@ export async function serveItem(req: Request, res: Response) {
 export async function updateOrderStatus(req: Request, res: Response) {
   try {
     const { id } = req.params
-    const { status } = req.body
+    const { status, paymentMethod } = req.body
 
     const validStatuses = ['PENDIENTE', 'EN_COCINA', 'LISTO', 'SERVIDO', 'PAGADO', 'ENTREGADO']
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ message: 'Estado inválido' })
+    }
+
+    const validMethods = ['EFECTIVO', 'QR']
+    if (status === 'PAGADO' && paymentMethod && !validMethods.includes(paymentMethod)) {
+      return res.status(400).json({ message: 'Método de pago inválido' })
     }
 
     const order = await prisma.order.findUnique({
@@ -229,9 +234,14 @@ export async function updateOrderStatus(req: Request, res: Response) {
     })
     if (!order) return res.status(404).json({ message: 'Pedido no encontrado' })
 
+    const updateData: any = { status }
+    if (status === 'PAGADO' && paymentMethod) {
+      updateData.paymentMethod = paymentMethod
+    }
+
     const updated = await prisma.order.update({
       where: { id: Number(id) },
-      data: { status },
+      data: updateData,
       include: {
         items: { include: { dish: true, supply: true } },
         table: true,

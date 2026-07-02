@@ -216,6 +216,8 @@ export async function generateCustomerReceipt(order: any): Promise<Buffer> {
       )
     }
 
+    const methodLabel = order.paymentMethod === 'QR' ? 'QR' : 'Efectivo'
+
     content.push(
       { text: '', margin: [0, 2, 0, 0] },
       { text: LINE, style: 'line', alignment: 'center' as const },
@@ -227,6 +229,7 @@ export async function generateCustomerReceipt(order: any): Promise<Buffer> {
         ],
         margin: [0, 0, 0, 0]
       },
+      { text: `Pagado con: ${methodLabel}`, alignment: 'center' as const, style: 'normal', margin: [0, 4, 0, 0] },
       { text: '', margin: [0, 2, 0, 0] },
       { text: LINE, style: 'line', alignment: 'center' as const },
       { text: '', margin: [0, 6, 0, 0] },

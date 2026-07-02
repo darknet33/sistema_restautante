@@ -1,5 +1,5 @@
 import api from './api'
-import type { Order, OrderType } from '../types'
+import type { Order, OrderType, PaymentMethod } from '../types'
 
 export function createOrder(data: {
   tableId?: number
@@ -24,8 +24,10 @@ export function getOrder(id: number): Promise<Order> {
   return api.get(`/orders/${id}`).then(r => r.data)
 }
 
-export function updateOrderStatus(id: number, status: string): Promise<Order> {
-  return api.patch(`/orders/${id}/status`, { status }).then(r => r.data)
+export function updateOrderStatus(id: number, status: string, paymentMethod?: PaymentMethod): Promise<Order> {
+  const body: any = { status }
+  if (paymentMethod) body.paymentMethod = paymentMethod
+  return api.patch(`/orders/${id}/status`, body).then(r => r.data)
 }
 
 export function serveOrderItem(orderId: number, itemId: number): Promise<any> {

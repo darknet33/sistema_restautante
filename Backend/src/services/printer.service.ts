@@ -203,6 +203,8 @@ function buildCustomerReceipt(order: any): Buffer {
   const totalLine = `TOTAL:${' '.repeat(18)}Bs. ${Number(order.total).toFixed(2)}`
   parts.push(textLine(totalLine))
   parts.push(escposBold(false))
+  const methodLabel = order.paymentMethod === 'QR' ? 'QR' : 'Efectivo'
+  parts.push(textLine(`Pagado con: ${methodLabel}`))
   parts.push(textLine(''))
   parts.push(textLine(LINE))
 

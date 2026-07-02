@@ -121,9 +121,30 @@ export async function closeTurno(req: Request, res: Response) {
     let closedCaja = null
     const openCaja = await prisma.cajaSession.findFirst({ where: { status: 'ABIERTA' } })
     if (openCaja) {
+      const paidOrders = await prisma.order.findMany({
+        where: {
+          status: 'PAGADO',
+          createdAt: { gte: start, lt: end }
+        }
+      })
+      let cashAmount = 0
+      let qrAmount = 0
+      for (const o of paidOrders) {
+        if (o.paymentMethod === 'QR') {
+          qrAmount += Number(o.total)
+        } else {
+          cashAmount += Number(o.total)
+        }
+      }
       closedCaja = await prisma.cajaSession.update({
         where: { id: openCaja.id },
-        data: { closingAmount: totalSales, closedAt: new Date(), status: 'CERRADA' },
+        data: {
+          cashAmount,
+          qrAmount,
+          closingAmount: totalSales,
+          closedAt: new Date(),
+          status: 'CERRADA'
+        },
         include: { user: { select: { id: true, name: true, username: true } } }
       })
       const { emitCajaClosed } = await import('../socket/emitter')

@@ -67,6 +67,8 @@ export interface OrderItem {
 
 export type OrderType = 'PARA_AQUI' | 'PARA_LLEVAR' | 'DELIVERY'
 
+export type PaymentMethod = 'EFECTIVO' | 'QR'
+
 export interface Order {
   id: number
   tableId?: number
@@ -76,6 +78,7 @@ export interface Order {
   orderType: OrderType
   status: 'PENDIENTE' | 'EN_COCINA' | 'LISTO' | 'SERVIDO' | 'PAGADO' | 'ENTREGADO'
   total: number
+  paymentMethod: PaymentMethod
   notes?: string
   deliveryAddress?: string
   deliveryPhone?: string
@@ -101,6 +104,8 @@ export interface CajaSession {
   user?: { id: number; name: string; username: string }
   openingAmount: number
   closingAmount?: number
+  cashAmount: number
+  qrAmount: number
   openedAt: string
   closedAt?: string
   status: 'ABIERTA' | 'CERRADA'

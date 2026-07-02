@@ -44,18 +44,26 @@ export async function openCaja(req: Request, res: Response) {
 
 export async function closeCaja(req: Request, res: Response) {
   try {
-    const { closingAmount } = req.body
-    if (closingAmount === undefined || Number(closingAmount) < 0) {
-      return res.status(400).json({ message: 'Monto final inválido' })
+    const { cashAmount, qrAmount } = req.body
+    if (cashAmount === undefined || Number(cashAmount) < 0) {
+      return res.status(400).json({ message: 'Monto en efectivo inválido' })
+    }
+    if (qrAmount === undefined || Number(qrAmount) < 0) {
+      return res.status(400).json({ message: 'Monto en QR inválido' })
     }
 
     const session = await prisma.cajaSession.findFirst({ where: { status: 'ABIERTA' } })
     if (!session) return res.status(400).json({ message: 'No hay caja abierta' })
 
+    const cash = Number(cashAmount)
+    const qr = Number(qrAmount)
+
     const closed = await prisma.cajaSession.update({
       where: { id: session.id },
       data: {
-        closingAmount: Number(closingAmount),
+        cashAmount: cash,
+        qrAmount: qr,
+        closingAmount: cash + qr,
         closedAt: new Date(),
         status: 'CERRADA'
       },

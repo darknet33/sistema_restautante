@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Check, CheckCircle, CreditCard, Printer, PlusCircle, Tag } from 'lucide-react'
+import { Check, CheckCircle, CreditCard, DollarSign, Printer, PlusCircle, QrCode, Tag } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getOrders, updateOrderStatus, getCustomerReceiptUrl } from '../../services/order.service'
 import { getTables } from '../../services/table.service'
@@ -9,7 +9,7 @@ import { formatCurrency, formatDateTime } from '../../utils/format'
 import Modal from '../../components/Modal'
 import TableCanvas from '../../components/TableCanvas'
 import TicketPreviewModal from '../../components/TicketPreviewModal'
-import type { Order } from '../../types'
+import type { Order, PaymentMethod } from '../../types'
 
 export default function CajeroDashboard() {
   const [openModal, setOpenModal] = useState(false)
@@ -20,8 +20,10 @@ export default function CajeroDashboard() {
   const [previewTitle, setPreviewTitle] = useState('')
   const [showPreview, setShowPreview] = useState(false)
   const [openingAmount, setOpeningAmount] = useState('')
-  const [closingAmount, setClosingAmount] = useState('')
-  const [closeSummary, setCloseSummary] = useState<{ openingAmount: number; closingAmount: number } | null>(null)
+  const [closingCash, setClosingCash] = useState('')
+  const [closingQr, setClosingQr] = useState('')
+  const [closeSummary, setCloseSummary] = useState<{ openingAmount: number; closingAmount: number; cashAmount: number; qrAmount: number } | null>(null)
+  const [selectedPayment, setSelectedPayment] = useState<PaymentMethod>('EFECTIVO')
   const queryClient = useQueryClient()
 
   useSocket('cajero')
@@ -36,7 +38,7 @@ export default function CajeroDashboard() {
   const { data: currentSession } = useQuery({ queryKey: ['currentCaja'], queryFn: getCurrentCaja, refetchInterval: 3000 })
 
   const payMutation = useMutation({
-    mutationFn: (id: number) => updateOrderStatus(id, 'PAGADO'),
+    mutationFn: ({ id, paymentMethod }: { id: number; paymentMethod: PaymentMethod }) => updateOrderStatus(id, 'PAGADO', paymentMethod),
     onSuccess: (order) => { queryClient.invalidateQueries({ queryKey: ['orders'] }); queryClient.invalidateQueries({ queryKey: ['tables'] }); setPayModal(null); setPaidOrder(order) }
   })
 
@@ -46,12 +48,12 @@ export default function CajeroDashboard() {
   })
 
   const closeCajaMutation = useMutation({
-    mutationFn: () => closeCaja(Number(closingAmount)),
+    mutationFn: () => closeCaja(Number(closingCash), Number(closingQr)),
     onSuccess: (session: any) => {
       queryClient.invalidateQueries({ queryKey: ['currentCaja'] })
       queryClient.invalidateQueries({ queryKey: ['dailySales'] })
       setCloseModal(false)
-      setCloseSummary({ openingAmount: session.openingAmount, closingAmount: session.closingAmount })
+      setCloseSummary({ openingAmount: session.openingAmount, closingAmount: session.closingAmount, cashAmount: session.cashAmount, qrAmount: session.qrAmount })
     }
   })
 
@@ -170,12 +172,12 @@ export default function CajeroDashboard() {
                 <div className="w-8 h-8 rounded-lg bg-altipiqui-green-light dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
                   <CheckCircle className="w-4 h-4 text-altipiqui-green" />
                 </div>
-                <div className="min-w-0">
-                  <p className="font-medium dark:text-dark-text truncate">
-                    {order.table?.number ? `Mesa ${order.table.number}` : order.orderType === 'DELIVERY' ? 'Delivery' : 'Para Llevar'}
-                  </p>
-                  <p className="text-xs text-gray-400 dark:text-dark-text-muted">{formatCurrency(order.total)} · {formatDateTime(order.updatedAt)}</p>
-                </div>
+                  <div className="min-w-0">
+                    <p className="font-medium dark:text-dark-text truncate">
+                      {order.table?.number ? `Mesa ${order.table.number}` : order.orderType === 'DELIVERY' ? 'Delivery' : 'Para Llevar'}
+                    </p>
+                    <p className="text-xs text-gray-400 dark:text-dark-text-muted">{formatCurrency(order.total)} · {order.paymentMethod === 'QR' ? 'QR' : 'Efectivo'} · {formatDateTime(order.updatedAt)}</p>
+                  </div>
               </div>
               <button
                 onClick={() => {
@@ -239,7 +241,31 @@ export default function CajeroDashboard() {
                   )
                 })}
               </div>
-              <button onClick={() => payMutation.mutate(payModal.id)} disabled={payMutation.isPending}
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => setSelectedPayment('EFECTIVO')}
+                  className={`flex items-center justify-center gap-2 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 border-2 ${
+                    selectedPayment === 'EFECTIVO'
+                      ? 'bg-altipiqui-green text-white border-altipiqui-green'
+                      : 'bg-white dark:bg-dark-surface text-gray-600 dark:text-dark-text border-gray-200 dark:border-dark-border hover:border-altipiqui-green/50'
+                  }`}
+                >
+                  <DollarSign className="w-4 h-4" />
+                  Efectivo
+                </button>
+                <button
+                  onClick={() => setSelectedPayment('QR')}
+                  className={`flex items-center justify-center gap-2 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 border-2 ${
+                    selectedPayment === 'QR'
+                      ? 'bg-altipiqui-indigo text-white border-altipiqui-indigo'
+                      : 'bg-white dark:bg-dark-surface text-gray-600 dark:text-dark-text border-gray-200 dark:border-dark-border hover:border-altipiqui-indigo/50'
+                  }`}
+                >
+                  <QrCode className="w-4 h-4" />
+                  QR
+                </button>
+              </div>
+              <button onClick={() => payMutation.mutate({ id: payModal.id, paymentMethod: selectedPayment })} disabled={payMutation.isPending}
                 className="w-full py-3 bg-altipiqui-green text-white rounded-xl font-bold hover:bg-green-700 disabled:opacity-50 transition-all duration-200 text-lg shadow-lg shadow-altipiqui-green/20 active:scale-[0.97]">
                 <span className="flex items-center justify-center gap-2">
                   <CheckCircle className="w-5 h-5" />
@@ -269,12 +295,24 @@ export default function CajeroDashboard() {
       <Modal open={closeModal} onClose={() => setCloseModal(false)} title="Cerrar Caja">
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1.5 dark:text-dark-text">Monto final</label>
+            <label className="block text-sm font-medium mb-1.5 dark:text-dark-text">Efectivo en caja</label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">Bs.</span>
-              <input type="number" value={closingAmount} onChange={e => setClosingAmount(e.target.value)} placeholder="0.00" min="0"
+              <input type="number" value={closingCash} onChange={e => setClosingCash(e.target.value)} placeholder="0.00" min="0"
                 className="w-full pl-10 pr-4 py-2.5 border border-border dark:border-dark-border rounded-xl focus:ring-2 focus:ring-altipiqui-red focus:border-altipiqui-red outline-none dark:bg-dark-surface dark:text-dark-text" />
             </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1.5 dark:text-dark-text">QR cobrado</label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">Bs.</span>
+              <input type="number" value={closingQr} onChange={e => setClosingQr(e.target.value)} placeholder="0.00" min="0"
+                className="w-full pl-10 pr-4 py-2.5 border border-border dark:border-dark-border rounded-xl focus:ring-2 focus:ring-altipiqui-red focus:border-altipiqui-red outline-none dark:bg-dark-surface dark:text-dark-text" />
+            </div>
+          </div>
+          <div className="flex justify-between text-sm bg-altipiqui-cream dark:bg-dark-bg rounded-xl p-3">
+            <span className="font-medium dark:text-dark-text">Total</span>
+            <span className="font-bold text-altipiqui-red">{formatCurrency((Number(closingCash) || 0) + (Number(closingQr) || 0))}</span>
           </div>
           <button onClick={() => closeCajaMutation.mutate()} disabled={closeCajaMutation.isPending}
             className="w-full py-2.5 bg-altipiqui-red text-white rounded-xl hover:bg-altipiqui-red-dark disabled:opacity-50 transition-all font-medium active:scale-[0.97]">Cerrar</button>
@@ -322,11 +360,19 @@ export default function CajeroDashboard() {
                 <span className="text-gray-500 dark:text-dark-text-muted">Monto inicial</span>
                 <span className="font-bold dark:text-dark-text">{formatCurrency(closeSummary.openingAmount)}</span>
               </div>
+              <div className="flex justify-between text-sm pt-2 border-t border-border/50 dark:border-dark-border/50">
+                <span className="text-gray-500 dark:text-dark-text-muted">Efectivo</span>
+                <span className="font-bold dark:text-dark-text">{formatCurrency(closeSummary.cashAmount)}</span>
+              </div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-500 dark:text-dark-text-muted">Monto final</span>
-                <span className="font-bold text-altipiqui-red">{formatCurrency(closeSummary.closingAmount)}</span>
+                <span className="text-gray-500 dark:text-dark-text-muted">QR</span>
+                <span className="font-bold dark:text-dark-text">{formatCurrency(closeSummary.qrAmount)}</span>
               </div>
               <div className="flex justify-between text-sm pt-2 border-t border-border/50 dark:border-dark-border/50">
+                <span className="text-gray-500 dark:text-dark-text-muted">Total final</span>
+                <span className="font-bold text-altipiqui-red">{formatCurrency(closeSummary.closingAmount)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
                 <span className="text-gray-500 dark:text-dark-text-muted">Diferencia</span>
                 <span className={`font-bold ${closeSummary.closingAmount >= closeSummary.openingAmount ? 'text-altipiqui-green' : 'text-red-500'}`}>
                   {formatCurrency(closeSummary.closingAmount - closeSummary.openingAmount)}
