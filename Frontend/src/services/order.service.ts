@@ -32,12 +32,14 @@ export function serveOrderItem(orderId: number, itemId: number): Promise<any> {
   return api.patch(`/orders/${orderId}/items/${itemId}/serve`).then(r => r.data)
 }
 
+const API_URL = import.meta.env.VITE_API_URL || ''
+
 export function getKitchenTicketUrl(orderId: number): string {
   const token = localStorage.getItem('token')
-  return `/api/orders/${orderId}/ticket?token=${token}`
+  return `${API_URL}/api/orders/${orderId}/ticket?token=${token}`
 }
 
 export function getCustomerReceiptUrl(orderId: number): string {
   const token = localStorage.getItem('token')
-  return `/api/orders/${orderId}/receipt?token=${token}`
+  return `${API_URL}/api/orders/${orderId}/receipt?token=${token}`
 }

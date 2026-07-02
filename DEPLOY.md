@@ -183,3 +183,19 @@ npm run build
 2. En Plesk: **Git > Pull** en ambos subdominios
 3. `api.altipiqui.com` > Node.js > **Ejecutar script > `build`** > **Restart**
 4. `app.altipiqui.com` > Node.js > **Ejecutar comandos > `npm run build`**
+
+## Problemas conocidos y soluciones
+
+### Tickets/recibos no se abren en producción
+
+**Causa:** Las funciones `getKitchenTicketUrl()` y `getCustomerReceiptUrl()` en `Frontend/src/services/order.service.ts` devolvían rutas relativas (`/api/orders/...`). Como el frontend se sirve desde `app.altipiqui.com` y la API desde `api.altipiqui.com`, esas rutas relativas apuntaban al dominio incorrecto.
+
+**Solución:** Se antepuso `VITE_API_URL` a ambas URLs, generando rutas absolutas como `https://api.altipiqui.com/api/orders/42/receipt?token=xxx`.
+
+```
+// ❌ Antes
+return `/api/orders/${orderId}/ticket?token=${token}`
+
+// ✅ Después
+return `${API_URL}/api/orders/${orderId}/ticket?token=${token}`
+```
