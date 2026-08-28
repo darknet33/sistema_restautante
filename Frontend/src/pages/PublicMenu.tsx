@@ -45,31 +45,71 @@ export default function PublicMenu() {
             <img src="/logo.png" alt="ALTIPIQUI" className="w-full h-full object-cover" />
           </div>
 
-          {/* Platos laterales */}
-          <div className="w-full flex flex-col items-center lg:flex-col flex-row justify-center gap-3 overflow-x-auto pb-2 lg:pb-0">
-            {dishes.filter(d => d.imageUrl).slice(0, 5).map((dish, i) => (
-              <div key={dish.id} className="flex flex-col items-center">
-                <div
-                  className="w-[105px] h-[105px] lg:w-[105px] lg:h-[105px] w-[65px] h-[65px] rounded-full overflow-hidden flex-shrink-0"
-                  style={{
-                    border: '4px solid #d6a73c',
-                    outline: '2px solid white',
-                    background: '#333',
-                    boxShadow: '0 8px 20px rgba(0,0,0,.4)',
-                  }}
-                >
-                  <img
-                    src={uploadUrl(dish.imageUrl)}
-                    alt={dish.name}
-                    className="w-full h-full object-cover"
-                  />
+          {/* Platos por categoría */}
+          <div className="w-full flex-1 overflow-y-auto space-y-6 pr-1 scrollbar-thin">
+            {groups.map(group => (
+              <div key={group.category}>
+                {/* Encabezado de categoría */}
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="h-px flex-1" style={{ borderColor: '#d6a73c', borderTop: '2px dashed #d6a73c' }} />
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-white/80 whitespace-nowrap">
+                    {group.category}
+                  </span>
+                  <div className="h-px flex-1" style={{ borderColor: '#d6a73c', borderTop: '2px dashed #d6a73c' }} />
                 </div>
-                {i < Math.min(dishes.filter(d => d.imageUrl).length, 5) - 1 && (
-                  <div
-                    className="hidden lg:block h-[35px] border-l-[2px] border-dashed my-2"
-                    style={{ borderColor: '#d6a73c' }}
-                  />
-                )}
+
+                {/* Lista de platos */}
+                <div className="space-y-5">
+                  {group.items.map((dish, i) => (
+                    <div key={dish.id} className="flex flex-col items-center text-center">
+                      {/* Imagen circular */}
+                      <div
+                        className="w-[90px] h-[90px] rounded-full overflow-hidden flex-shrink-0"
+                        style={{
+                          border: '4px solid #d6a73c',
+                          outline: '2px solid white',
+                          background: '#333',
+                          boxShadow: '0 8px 20px rgba(0,0,0,.4)',
+                        }}
+                      >
+                        {dish.imageUrl ? (
+                          <img
+                            src={uploadUrl(dish.imageUrl)}
+                            alt={dish.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-3xl">🍽️</div>
+                        )}
+                      </div>
+
+                      {/* Nombre */}
+                      <h3 className="mt-2 font-heading font-bold text-sm text-white leading-tight">
+                        {dish.name}
+                      </h3>
+
+                      {/* Descripción */}
+                      {dish.description && (
+                        <p className="text-[11px] text-white/50 mt-0.5 leading-snug line-clamp-2 px-1 max-w-[140px]">
+                          {dish.description}
+                        </p>
+                      )}
+
+                      {/* Precio */}
+                      <span className="mt-1 text-sm font-bold" style={{ color: '#d6a73c' }}>
+                        {formatCurrency(dish.price)}
+                      </span>
+
+                      {/* Separador punteado */}
+                      {i < group.items.length - 1 && (
+                        <div
+                          className="h-[25px] border-l-[2px] border-dashed mt-3"
+                          style={{ borderColor: '#d6a73c' }}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
