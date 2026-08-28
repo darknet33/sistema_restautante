@@ -59,17 +59,17 @@ export default function PublicMenu() {
                 </div>
 
                 {/* Lista de platos */}
-                <div className="space-y-5">
+                <div className="space-y-4">
                   {group.items.map((dish, i) => (
-                    <div key={dish.id} className="flex flex-col items-center text-center">
+                    <div key={dish.id} className="flex items-center gap-3">
                       {/* Imagen circular */}
                       <div
-                        className="w-[90px] h-[90px] rounded-full overflow-hidden flex-shrink-0"
+                        className="w-[70px] h-[70px] rounded-full overflow-hidden flex-shrink-0"
                         style={{
-                          border: '4px solid #d6a73c',
+                          border: '3px solid #d6a73c',
                           outline: '2px solid white',
                           background: '#333',
-                          boxShadow: '0 8px 20px rgba(0,0,0,.4)',
+                          boxShadow: '0 6px 16px rgba(0,0,0,.4)',
                         }}
                       >
                         {dish.imageUrl ? (
@@ -79,34 +79,24 @@ export default function PublicMenu() {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-3xl">🍽️</div>
+                          <div className="w-full h-full flex items-center justify-center text-2xl">🍽️</div>
                         )}
                       </div>
 
-                      {/* Nombre */}
-                      <h3 className="mt-2 font-heading font-bold text-sm text-white leading-tight">
-                        {dish.name}
-                      </h3>
-
-                      {/* Descripción */}
-                      {dish.description && (
-                        <p className="text-[11px] text-white/50 mt-0.5 leading-snug line-clamp-2 px-1 max-w-[140px]">
-                          {dish.description}
-                        </p>
-                      )}
-
-                      {/* Precio */}
-                      <span className="mt-1 text-sm font-bold" style={{ color: '#d6a73c' }}>
-                        {formatCurrency(dish.price)}
-                      </span>
-
-                      {/* Separador punteado */}
-                      {i < group.items.length - 1 && (
-                        <div
-                          className="h-[25px] border-l-[2px] border-dashed mt-3"
-                          style={{ borderColor: '#d6a73c' }}
-                        />
-                      )}
+                      {/* Datos del plato */}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-heading font-bold text-sm text-white leading-tight">
+                          {dish.name}
+                        </h3>
+                        {dish.description && (
+                          <p className="text-[10px] text-white/50 mt-0.5 leading-snug line-clamp-2">
+                            {dish.description}
+                          </p>
+                        )}
+                        <span className="text-sm font-bold mt-0.5 inline-block" style={{ color: '#d6a73c' }}>
+                          {formatCurrency(dish.price)}
+                        </span>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -164,67 +154,6 @@ export default function PublicMenu() {
                 style={{ boxShadow: '0 15px 30px rgba(0,0,0,.18)' }}
               />
             </section>
-          )}
-
-          {/* Listado de platos por categoría */}
-          {!isLoading && dishes.length > 0 && (
-            <div className="w-[86%] mx-auto pb-10">
-              {groups.map(group => (
-                <section key={group.category} className="mb-8">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="h-px flex-1 bg-[#d6a73c]/40" />
-                    <h2 className="font-heading font-bold text-xl sm:text-2xl" style={{ color: '#5D4037' }}>
-                      {group.category}
-                    </h2>
-                    <div className="h-px flex-1 bg-[#d6a73c]/40" />
-                  </div>
-
-                  <div className="space-y-3">
-                    {group.items.map(dish => (
-                      <div
-                        key={dish.id}
-                        className="bg-white rounded-xl p-4 flex items-start gap-4 transition-all duration-200 hover:shadow-md"
-                        style={{ boxShadow: '0 2px 8px rgba(0,0,0,.06)' }}
-                      >
-                        {/* Miniatura */}
-                        {dish.imageUrl ? (
-                          <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-[#f2ede3]">
-                            <img
-                              src={uploadUrl(dish.imageUrl)}
-                              alt={dish.name}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        ) : (
-                          <div className="w-16 h-16 rounded-lg bg-[#f2ede3] flex items-center justify-center flex-shrink-0">
-                            <span className="text-2xl">🍽️</span>
-                          </div>
-                        )}
-
-                        {/* Info */}
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-heading font-bold text-base" style={{ color: '#111' }}>
-                            {dish.name}
-                          </h3>
-                          {dish.description && (
-                            <p className="text-sm text-gray-500 mt-0.5 leading-relaxed line-clamp-2">
-                              {dish.description}
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Precio */}
-                        <div className="flex-shrink-0">
-                          <span className="text-lg font-bold" style={{ color: '#d6a73c' }}>
-                            {formatCurrency(dish.price)}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              ))}
-            </div>
           )}
 
           {/* Loading */}
