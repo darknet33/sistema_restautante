@@ -23,6 +23,7 @@ import WaiterConsumibles from "./pages/waiter/Consumibles"
 
 import KitchenDashboard from "./pages/kitchen/Dashboard"
 import PublicMenu from "./pages/PublicMenu"
+import LandingPage from "./pages/LandingPage"
 
 const queryClient = new QueryClient()
 
@@ -34,9 +35,10 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <HashRouter>
           <Routes>
+            <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<Login onLogin={login} />} />
             <Route path="/menu" element={<PublicMenu />} />
-            <Route path="*" element={<Navigate to="/login" replace />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </HashRouter>
       </QueryClientProvider>
@@ -47,6 +49,10 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <HashRouter>
         <Routes>
+          {/* Public routes - no layout */}
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/menu" element={<PublicMenu />} />
+
           <Route element={<Layout user={user!} onLogout={logout} />}>
             {/* Admin routes */}
             {user?.role === "ADMIN" && (
@@ -84,16 +90,7 @@ function App() {
               <Route path="/cocina" element={<KitchenDashboard />} />
             )}
 
-            {/* Default redirect based on role */}
-            <Route path="/" element={
-              user?.role === "ADMIN" ? <Navigate to="/admin/dashboard" replace /> :
-              user?.role === "CAJERO" ? <Navigate to="/cajero" replace /> :
-              user?.role === "MESERO" ? <Navigate to="/mesero/dashboard" replace /> :
-              user?.role === "COCINA" ? <Navigate to="/cocina" replace /> :
-              <Navigate to="/login" replace />
-            } />
             <Route path="/login" element={<Navigate to="/" replace />} />
-            <Route path="/menu" element={<PublicMenu />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>
