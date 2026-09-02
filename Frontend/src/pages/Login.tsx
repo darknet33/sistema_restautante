@@ -23,28 +23,30 @@ export default function Login({ onLogin }: LoginProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-altipiqui-red via-altipiqui-red-dark to-altipiqui-indigo-dark flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Decorative pattern overlay */}
-      <div className="absolute inset-0 opacity-5">
-        <div className="absolute inset-0" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }} />
-      </div>
-
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
+      style={{ background: '#e9e5dc' }}
+    >
+      {/* Brand header */}
       <div className="w-full max-w-md relative">
-        {/* Brand header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-white/10 backdrop-blur-sm rounded-2xl mb-4 ring-2 ring-white/20">
+          <div
+            className="inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-4"
+            style={{ background: '#111', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}
+          >
             <img src="/logo.png" alt="ALTIPIQUI" className="w-14 h-14 object-contain" />
           </div>
-          <h1 className="text-3xl font-heading font-bold text-white">ALTIPIQUI</h1>
-          <p className="text-white/70 mt-1 text-sm">Sabor que manda</p>
+          <h1 className="text-4xl font-heading font-bold" style={{ color: '#111' }}>
+            ALTIPIQUI
+          </h1>
+          <p className="text-gray-600 mt-1 text-sm">Restaurante de Comida Andina — Sabor que manda</p>
         </div>
 
         {/* Login card */}
-        <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-8">
+        <div className="bg-white rounded-2xl p-8" style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
           <div className="text-center mb-6">
-            <h2 className="text-xl font-heading font-bold text-altipiqui-brown">Iniciar Sesión</h2>
+            <h2 className="text-xl font-heading font-bold" style={{ color: '#5D4037' }}>
+              Iniciar Sesión
+            </h2>
             <p className="text-gray-500 text-sm mt-1">Ingresa tus credenciales</p>
           </div>
 
@@ -93,7 +95,8 @@ export default function Login({ onLogin }: LoginProps) {
             <button
               type="submit"
               disabled={mutation.isPending}
-              className="w-full py-2.5 bg-altipiqui-red text-white font-semibold rounded-xl hover:bg-altipiqui-red-dark disabled:opacity-50 transition-all duration-200 shadow-lg shadow-altipiqui-red/25 hover:shadow-xl active:scale-[0.98]"
+              className="w-full py-2.5 font-semibold rounded-full transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+              style={{ background: '#d6a73c', color: '#111', boxShadow: '0 4px 14px rgba(214,167,60,0.4)' }}
             >
               {mutation.isPending ? (
                 <span className="flex items-center justify-center gap-2">
@@ -105,7 +108,7 @@ export default function Login({ onLogin }: LoginProps) {
           </form>
         </div>
 
-        <p className="text-center text-white/50 text-xs mt-6">
+        <p className="text-center text-gray-400 text-xs mt-6">
           © 2026 ALTIPIQUI — Todos los derechos reservados
         </p>
       </div>
